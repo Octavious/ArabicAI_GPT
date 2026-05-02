@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>BPE Tokenizer Visualizer — TinyStories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f6f2ea;
+    --ink: #1a1a1a;
+    --muted: #6b6558;
+    --line: #d9d2c2;
+    --accent: #c4541b;
+    --panel: #fffdf7;
+    --shadow: 0 1px 0 rgba(26,26,26,0.05), 0 8px 24px -12px rgba(26,26,26,0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+    font-feature-settings: "ss01", "ss02";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(196, 84, 27, 0.06), transparent 45%),
+      radial-gradient(circle at 90% 100%, rgba(30, 60, 90, 0.05), transparent 50%);
+    min-height: 100vh;
+    padding: 48px 24px 96px;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: clamp(38px, 5vw, 58px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin: 0 0 14px;
+    font-variation-settings: "opsz" 144;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .lede {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 640px;
+    margin: 0;
+  }
+
+  .loader-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .loader-panel label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input[type="file"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  input[type="file"]::file-selector-button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 8px 14px;
+    margin-right: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background: var(--accent);
+  }
+
+  .status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .status.ready { color: #2d7a3e; }
+  .status.error { color: #b03030; }
+
+  .input-area {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 32px;
+  }
+
+  .input-area label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px 16px;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .examples {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .example-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .results {
+    display: grid;
+    gap: 24px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .stat {
+    background: var(--panel);
+    padding: 18px 20px;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-value em {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+    font-style: normal;
+    margin-left: 4px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .panel h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+
+  .token-visual {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    line-height: 2.4;
+    word-break: break-word;
+  }
+
+  .token {
+    display: inline-block;
+    padding: 4px 7px;
+    margin: 2px 1px;
+    border-radius: 3px;
+    position: relative;
+    transition: transform 0.1s;
+    cursor: default;
+  }
+
+  .token:hover {
+    transform: translateY(-1px);
+    z-index: 2;
+  }
+
+  .token:hover::after {
+    content: "id: " attr(data-id);
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 4px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .token-space { color: rgba(0,0,0,0.35); }
+
+  .id-list {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+    word-break: break-all;
+  }
+
+  .id-list span {
+    color: var(--ink);
+  }
+
+  .empty {
+    color: var(--muted);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+  }
+
+  .setup-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(196, 84, 27, 0.07);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .setup-note code {
+    background: rgba(26, 26, 26, 0.06);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eyebrow">BPE Tokenizer · Inspector</div>
+    <h1>See how your model <em>sees</em> text.</h1>
+    <p class="lede">
+      Load the tokenizer you trained on TinyStories, then watch any sentence get
+      carved into the tokens your transformer will actually consume. Hover a
+      token to see its numeric ID.
+    </p>
+  </header>
+
+  <div class="setup-note">
+    Load <code>tinystories_tokenizer.json</code> from your project folder.
+    Everything runs locally in your browser — no server, no upload.
+  </div>
+
+  <div class="loader-panel">
+    <label for="tokFile">Tokenizer file</label>
+    <input type="file" id="tokFile" accept=".json" />
+    <span class="status" id="status">waiting…</span>
+  </div>
+
+  <div class="input-area">
+    <label for="textInput">Input text</label>
+    <textarea id="textInput" placeholder="Type a sentence and watch it become tokens…" disabled>Once upon a time, Lily found a needle in her room.</textarea>
+    <div class="examples">
+      <button class="example-chip" data-text="The cat sat on the mat.">The cat sat on the mat.</button>
+      <button class="example-chip" data-text="Lily was happy in the garden.">Lily was happy in the garden.</button>
+      <button class="example-chip" data-text="xylophone antidisestablishmentarianism">rare words</button>
+      <button class="example-chip" data-text="Once upon a time">Once upon a time</button>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <p class="empty">Waiting for tokenizer…</p>
+  </div>
+
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   Byte-level BPE encoder implemented in vanilla JS.
+   Mirrors the logic of the HuggingFace `tokenizers` library for files
+   produced with ByteLevel pre-tokenizer + BPE model.
+------------------------------------------------------------------ */
+
+let vocab = null;          // token string -> id
+let idToToken = null;      // id -> token string
+let mergeRanks = null;     // "a b" -> rank (lower = higher priority)
+let byteEncoder = null;    // byte value -> visible unicode char
+let byteDecoder = null;    // visible unicode char -> byte value
+
+/* GPT-2 / byte-level BPE byte <-> unicode mapping. This maps every
+   byte 0..255 to a printable unicode codepoint, so whitespace and
+   control bytes become visible characters inside the BPE vocab. */
+function buildByteMaps() {
+  const bs = [];
+  for (let i = 33; i <= 126; i++) bs.push(i);
+  for (let i = 161; i <= 172; i++) bs.push(i);
+  for (let i = 174; i <= 255; i++) bs.push(i);
+  const cs = bs.slice();
+  let n = 0;
+  for (let b = 0; b < 256; b++) {
+    if (!bs.includes(b)) {
+      bs.push(b);
+      cs.push(256 + n);
+      n++;
+    }
+  }
+  const encoder = {};
+  const decoder = {};
+  for (let i = 0; i < bs.length; i++) {
+    encoder[bs[i]] = String.fromCodePoint(cs[i]);
+    decoder[String.fromCodePoint(cs[i])] = bs[i];
+  }
+  return { encoder, decoder };
+}
+
+function loadTokenizer(json) {
+  // HuggingFace tokenizer JSON structure
+  vocab = json.model.vocab;
+  idToToken = {};
+  for (const [tok, id] of Object.entries(vocab)) idToToken[id] = tok;
+
+  const merges = json.model.merges;
+  mergeRanks = {};
+  merges.forEach((m, i) => {
+    // `merges` is either array of strings "a b" or array of [a,b] pairs
+    const key = Array.isArray(m) ? m.join(' ') : m;
+    mergeRanks[key] = i;
+  });
+
+  const maps = buildByteMaps();
+  byteEncoder = maps.encoder;
+  byteDecoder = maps.decoder;
+}
+
+/* Convert a UTF-8 string into the byte-level visible representation
+   that BPE operates on. */
+function bytesToVisible(str) {
+  const utf8 = new TextEncoder().encode(str);
+  let out = '';
+  for (const b of utf8) out += byteEncoder[b];
+  return out;
+}
+
+/* Get all adjacent pairs in a symbol array. */
+function getPairs(symbols) {
+  const pairs = new Set();
+  for (let i = 0; i < symbols.length - 1; i++) {
+    pairs.add(symbols[i] + '\u0000' + symbols[i + 1]);
+  }
+  return pairs;
+}
+
+/* Apply BPE merges to a single pre-tokenized word. */
+function bpe(word) {
+  if (word.length <= 1) return [word];
+  let symbols = Array.from(word);
+
+  while (true) {
+    const pairs = getPairs(symbols);
+    if (pairs.size === 0) break;
+
+    // Find lowest-rank (earliest-learned) merge still present.
+    let best = null;
+    let bestRank = Infinity;
+    for (const p of pairs) {
+      const [a, b] = p.split('\u0000');
+      const key = a + ' ' + b;
+      const rank = mergeRanks[key];
+      if (rank !== undefined && rank < bestRank) {
+        bestRank = rank;
+        best = [a, b];
+      }
+    }
+    if (!best) break;
+
+    // Merge every occurrence of the pair in this word.
+    const [a, b] = best;
+    const merged = [];
+    let i = 0;
+    while (i < symbols.length) {
+      if (i < symbols.length - 1 && symbols[i] === a && symbols[i + 1] === b) {
+        merged.push(a + b);
+        i += 2;
+      } else {
+        merged.push(symbols[i]);
+        i++;
+      }
+    }
+    symbols = merged;
+  }
+  return symbols;
+}
+
+/* Pre-tokenize on whitespace boundaries the same way ByteLevel does:
+   each run of non-space chars is a word, and leading spaces get
+   attached to the following word (represented as 'Ġ'). */
+function preTokenize(text) {
+  const visible = bytesToVisible(text);
+  // Split so that each word keeps its leading space-marker.
+  // ByteLevel maps space (0x20) to 'Ġ'.
+  const out = [];
+  let current = '';
+  for (const ch of visible) {
+    if (ch === 'Ġ' && current.length > 0) {
+      out.push(current);
+      current = ch;
+    } else {
+      current += ch;
+    }
+  }
+  if (current.length > 0) out.push(current);
+  return out;
+}
+
+/* Full encode: text -> array of { token, id } */
+function encode(text) {
+  if (!vocab) return [];
+  const words = preTokenize(text);
+  const result = [];
+  for (const word of words) {
+    const pieces = bpe(word);
+    for (const piece of pieces) {
+      const id = vocab[piece];
+      result.push({
+        token: piece,
+        id: id !== undefined ? id : null,
+      });
+    }
+  }
+  return result;
+}
+
+/* Decode the visible BPE token back to human-readable text. */
+function tokenToDisplay(tok) {
+  try {
+    const bytes = [];
+    for (const ch of tok) {
+      const b = byteDecoder[ch];
+      if (b !== undefined) bytes.push(b);
+    }
+    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+    // Replace leading space with a visible dot so you can see the word boundary.
+    return decoded.replace(/ /g, '·');
+  } catch {
+    return tok;
+  }
+}
+
+/* ------------------------------------------------------------------
+   UI
+------------------------------------------------------------------ */
+
+const statusEl = document.getElementById('status');
+const fileInput = document.getElementById('tokFile');
+const textInput = document.getElementById('textInput');
+const resultsEl = document.getElementById('results');
+
+/* Soft, warm palette for token backgrounds. Colors rotate so adjacent
+   tokens are visually distinct. */
+const palette = [
+  '#f4d9c2', '#e6d4bf', '#d9e4d0', '#c8dde0',
+  '#e3d0df', '#efe0c4', '#d4dbe8', '#e8d4cb',
+];
+
+function colorFor(id, idx) {
+  if (id === null) return '#f8c0c0'; // red-ish for unknown
+  return palette[idx % palette.length];
+}
+
+function render() {
+  if (!vocab) {
+    resultsEl.innerHTML = '<p class="empty">Waiting for tokenizer…</p>';
+    return;
+  }
+  const text = textInput.value;
+  if (!text.trim()) {
+    resultsEl.innerHTML = '<p class="empty">Type something above to tokenize it.</p>';
+    return;
+  }
+
+  const tokens = encode(text);
+  const charCount = text.length;
+  const tokenCount = tokens.length;
+  const ratio = tokenCount > 0 ? (charCount / tokenCount).toFixed(2) : '0';
+
+  resultsEl.innerHTML = `
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Tokens</div>
+        <div class="stat-value">${tokenCount}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Characters</div>
+        <div class="stat-value">${charCount}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Ratio</div>
+        <div class="stat-value">${ratio}<em>chars/tok</em></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Vocab size</div>
+        <div class="stat-value">${Object.keys(vocab).length.toLocaleString()}</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Tokens — hover to see IDs</h2>
+      <div class="token-visual" id="tokVisual"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Token IDs (what the model actually sees)</h2>
+      <div class="id-list">[ <span>${tokens.map(t => t.id ?? '?').join('</span>, <span>')}</span> ]</div>
+    </div>
+  `;
+
+  const visualEl = document.getElementById('tokVisual');
+  tokens.forEach((t, i) => {
+    const span = document.createElement('span');
+    span.className = 'token';
+    span.textContent = tokenToDisplay(t.token);
+    span.dataset.id = t.id ?? 'UNK';
+    span.style.background = colorFor(t.id, i);
+    visualEl.appendChild(span);
+  });
+}
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  statusEl.textContent = 'loading…';
+  statusEl.className = 'status';
+  try {
+    const text = await file.text();
+    const json = JSON.parse(text);
+    loadTokenizer(json);
+    statusEl.textContent = `✓ loaded · ${Object.keys(vocab).length} tokens`;
+    statusEl.className = 'status ready';
+    textInput.disabled = false;
+    render();
+  } catch (err) {
+    statusEl.textContent = 'error: ' + err.message;
+    statusEl.className = 'status error';
+    console.error(err);
+  }
+});
+
+textInput.addEventListener('input', render);
+
+document.querySelectorAll('.example-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    textInput.value = btn.dataset.text;
+    render();
+  });
+});
+</script>
+</body>
+</html>

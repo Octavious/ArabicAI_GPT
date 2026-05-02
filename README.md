@@ -1,233 +1,124 @@
-# LLM From Scratch — Setup Guide
+# Build a GPT From Scratch on a 6 GB GPU
 
-Build a small GPT-style language model from scratch on your own machine. This README covers the **setup phase only** — installing Python, `uv`, creating a virtual environment, and verifying your GPU is ready for training.
+A YouTube series and accompanying code where we build a small transformer language model from absolute zero — empty folder to a model that writes children's stories — on consumer hardware.
 
----
-
-## Prerequisites
-
-- **Windows 10/11** (these instructions are Windows-specific; Linux/macOS users should adapt commands)
-- **NVIDIA GPU** with at least 4GB VRAM (6GB recommended)
-- **NVIDIA driver** installed and up to date
-- **~5GB of free disk space** for Python, libraries, and PyTorch
-
-To confirm your GPU is detected, open PowerShell and run:
-
-```powershell
-nvidia-smi
-```
-
-You should see a table with your GPU listed and a "CUDA Version" in the top-right corner. If `nvidia-smi` is not found, install the latest NVIDIA driver from [nvidia.com/Download](https://www.nvidia.com/Download/index.aspx) before continuing.
-
-> **Important note about `nvidia-smi`'s "CUDA Version":** This number is the *maximum* CUDA version your driver supports — not what is installed. PyTorch bundles its own CUDA runtime inside the wheel. As long as your driver's max ≥ PyTorch's CUDA version, everything works.
+**▶ [Watch the YouTube playlist](https://www.youtube.com/playlist?list=PLvmpljk9TE2v4LbSrQxmnbOKkLa0Mw1oD)**
 
 ---
 
-## Step 1 — Install Python 3.11
+## What We're Building
 
-We use Python 3.11 specifically. Newer versions (3.13) sometimes lack ML library wheels; older versions are slower.
+A 12-million-parameter GPT, hand-coded line by line, trained on TinyStories. Runs on a 6 GB GPU in about 2 hours. By the end, it writes coherent short stories.
 
-1. Open your browser and go to:
-   [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
+No `transformers` library. No pre-built model classes. Every component built from PyTorch primitives so you understand exactly how transformers work.
 
-2. Scroll to the bottom and download **"Windows installer (64-bit)"**.
+## Who This Is For
 
-3. Open the downloaded `.exe`.
+- Developers who use ChatGPT and want to actually understand how it works under the hood
+- ML beginners who want a project that goes deeper than "fine-tune this Hugging Face model"
+- Anyone with a consumer GPU who's been told "you can't train an LLM" — you can, just a small one
 
-4. **On the first installer screen, check the box** ✅ **"Add python.exe to PATH"** — this is critical.
-
-5. Click **"Install Now"** and wait for it to finish.
-
-6. Open a **new** PowerShell window (must be fresh to pick up the updated PATH).
-
-7. Verify:
-
-   ```powershell
-   py -3.11 --version
-   ```
-
-   You should see `Python 3.11.9`.
+You need basic Python familiarity. No ML background required; we build up from the ground.
 
 ---
 
-## Step 2 — Install `uv`
+## The Episodes
 
-`uv` is a fast Python package installer. It's a drop-in replacement for `pip` and is significantly faster, especially for large packages like PyTorch.
+| # | Episode | Status | Code |
+|---|---------|--------|------|
+| 01 | [Setup — environment and GPU verification](./episode-01-setup/) | ✅ Released | `GPUVerification.py` |
+| 02 | [Data and tokenization — choosing what to feed the model](./episode-02-data-and-tokenizer/) | 🎬 Recording | `train_tokenizer.py`, `prepare_data.py` |
+| 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | 📝 Drafting | — |
+| 04 | [Building the model — attention, FFN, blocks](./episode-04-building-the-model/) | 📝 Planned | `model.py` |
+| 05 | [Training — the optimization story](./episode-05-training/) | 📝 Planned | `train.py` |
+| 06 | [Watching it learn — interpreting training curves](./episode-06-watching-it-learn/) | 📝 Planned | — |
+| 07 | [Generation — sampling and a web UI](./episode-07-generation/) | 📝 Planned | `generate.py`, `server.py` |
+| 08 | [Deploy — sharing your model on Hugging Face](./episode-08-deploy-huggingface/) | 📝 Planned | — |
 
-1. In PowerShell, run:
-
-   ```powershell
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-
-2. Wait for it to finish.
-
-3. Close PowerShell completely and open a new window.
-
-4. Verify:
-
-   ```powershell
-   uv --version
-   ```
-
-   You should see something like `uv 0.x.x`.
+> **Status legend:** ✅ Released · 🎬 Recording · 📝 Planned · 🚧 Coming soon
 
 ---
 
-## Step 3 — Create a Project Folder and Virtual Environment
+## Quick Start
 
-A virtual environment isolates your project's libraries from the rest of your system.
+If you want to dive in:
 
-1. Choose a location and create your project folder. Example:
-
-   ```powershell
-   cd M:\
-   mkdir my-llm-project
-   cd my-llm-project
-   ```
-
-2. Create the virtual environment using Python 3.11:
-
-   ```powershell
-   uv venv llm-env --python 3.11
-   ```
-
-3. Activate the environment:
-
-   ```powershell
-   .\llm-env\Scripts\activate
-   ```
-
-4. Confirm activation. Your prompt should show `(llm-env)` at the start:
-
-   ```
-   (llm-env) PS M:\my-llm-project>
-   ```
-
-   Anything you `uv pip install` from now on goes into this isolated environment.
-
-> If you see an error about *"running scripts is disabled on this system"*, run PowerShell as Administrator once and execute:
-> ```powershell
-> Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-> ```
+1. **Start with [Episode 01](./episode-01-setup/)** to set up your environment.
+2. Follow the episodes in order — each builds on the previous.
+3. Or, if you just want the finished model, head to [`final-project/`](./final-project/) for the combined codebase.
 
 ---
 
-## Step 4 — Install PyTorch with CUDA Support
+## Project Structure
 
-The trick: regular `pip install torch` gives you a CPU-only build. We need to explicitly request the CUDA build.
-
-For most modern NVIDIA GPUs (driver supports CUDA 12.x or higher), use:
-
-```powershell
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+build-gpt-from-scratch/
+├── README.md                          ← you are here
+├── episode-01-setup/                  ← env setup, GPU verification
+├── episode-02-data-and-tokenizer/     ← TinyStories + custom BPE
+├── episode-03-architecture-theory/    ← intuition, no code
+├── episode-04-building-the-model/     ← model.py from scratch
+├── episode-05-training/               ← train.py + optimization
+├── episode-06-watching-it-learn/      ← reading training curves
+├── episode-07-generation/             ← inference + web UI
+├── episode-08-deploy-huggingface/     ← share with the world
+└── final-project/                     ← complete combined codebase
 ```
 
-This downloads ~2.5GB. Be patient.
-
-If your driver only supports CUDA 11.8 (older systems), use `cu118` instead:
-
-```powershell
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-```
-
-> **Always check [pytorch.org/get-started/locally](https://pytorch.org/get-started/locally/)** for the current correct install command. The selector on that page reflects live support.
+Each episode folder contains its own README with the full written walkthrough of that video, plus the code files built during it.
 
 ---
 
-## Step 5 — Verify the Installation
+## Hardware Requirements
 
-Run GPUVerification.py:
+| Component | Recommended | Minimum |
+|-----------|-------------|---------|
+| GPU | NVIDIA, 6 GB+ VRAM | 4 GB VRAM (smaller model needed) |
+| RAM | 16 GB | 8 GB |
+| Storage | 10 GB free | 5 GB free |
+| OS | Windows 10/11, Linux, macOS | any of the above |
 
-```powershell
-python GPUVerification.py
-```
+**No GPU?** You can train on CPU, but a 2-hour training run becomes a multi-day ordeal. Renting a cloud GPU (RunPod, Vast.ai, Google Colab Pro) is the practical alternative.
 
-You should see something like:
-
-```
-============================================================
- PyTorch & GPU Verification
-============================================================
-
-Python version : 3.11.9
-PyTorch version: 2.5.1+cu121
-CUDA available : True
-
-CUDA runtime  : 12.1
-GPU            : NVIDIA GeForce GTX 1660 SUPER
-Total VRAM     : 6.44 GB
-Compute capability: 7.5
-  Architecture: Turing (GTX 16-series, RTX 20-series)
-  Tensor Cores; no BF16
-
-Features supported on this GPU:
-  FP16 mixed precision      yes          halves activation memory
-  Tensor Cores              yes          huge speedup on matmul
-  BF16 training             no           use FP16 instead
-  Flash Attention           no           use standard attention
-  FP8 training              no           Hopper or newer required
-
-Running a real computation on the GPU...
-  Matrix multiply succeeded. Output shape: torch.Size([1000, 1000])
-  Memory allocated: 8.0 MB / 6438 MB total
-
-============================================================
- Your GPU is suitable for educational LLM training (10-30M params).
-============================================================
-```
-
-If you see this output, **your environment is ready for training**.
+**AMD GPU?** Possible via ROCm on Linux. Limited support on Windows. Use Apple Silicon's `mps` backend if on a Mac. The principles are identical; only the install command and `device` string change.
 
 ---
 
-## Troubleshooting
+## What You'll Understand by the End
 
-**Script runs but prints nothing**
-The file may be empty or have a save problem. Check it:
-```powershell
-type GPUVerification.py
-```
-If the contents look wrong, re-save the script.
+At a mechanistic level — not "I've heard the term," but "I could explain it to a friend":
 
-**`CUDA available: False`**
-You likely got the CPU-only PyTorch wheel. Fix:
-```powershell
-uv pip uninstall torch torchvision
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-```
+- How tokens become vectors (embeddings)
+- How attention works (queries, keys, values, masks)
+- Why transformers stack (layers as hierarchical understanding)
+- How training actually works (gradients, AdamW, learning rate schedules)
+- Why we hold out validation data (generalization vs memorization)
+- How sampling produces text (top-k, temperature, EOT handling)
+- How to deploy a model so others can use it
 
-**`ImportError: No module named torch`**
-The virtual environment is not active, or PyTorch was installed in a different environment. Make sure you see `(llm-env)` in your prompt before running scripts.
-
-**`nvidia-smi` not found**
-NVIDIA driver is not installed or not in PATH. Download the latest driver from [nvidia.com/Download](https://www.nvidia.com/Download/index.aspx) and reboot.
+This is the same architecture as GPT-2, GPT-3, GPT-4, LLaMA, and Mistral. They differ only in scale and minor modernizations. You'll have built the core.
 
 ---
 
-## What's Next
+## Questions and Discussion
 
-Once verification passes, you're ready for the next phase: **building the tokenizer and preparing the TinyStories dataset**. That's covered in the next part of the series.
+- **Found a bug?** Open an issue on this repo.
+- **Stuck during a video?** Comment on the YouTube video — I read every comment.
+- **Have an idea for a future episode?** Issues welcome there too.
 
-## Compute Capability Reference
+---
 
-If you're curious what your GPU's "compute capability" means and which generation it belongs to:
+## License
 
-| Compute Capability | Architecture | GPU Family |
-|--------------------|---------------|------------|
-| 6.1 | Pascal | GTX 10-series |
-| 7.0 | Volta | Tesla V100 |
-| 7.5 | Turing | GTX 16-series, RTX 20-series |
-| 8.0 | Ampere | A100 |
-| 8.6 | Ampere | RTX 30-series |
-| 8.9 | Ada Lovelace | RTX 40-series |
-| 9.0 | Hopper | H100 |
-| 10.0 | Blackwell | RTX 50-series |
+Code: MIT. Educational content: free to share with attribution.
 
-Higher numbers = newer hardware = more ML features supported.
+If this series helped you understand something that felt impenetrable before, the best thank-you is to share it with someone else who'd benefit.
 
-- **≥ 7.0** unlocks Tensor Cores (huge speedup for ML)
-- **≥ 8.0** unlocks BF16 training and Flash Attention
-- **≥ 8.9** unlocks FP8 training
+---
 
-Our project does not require any features beyond 7.0, so any modern NVIDIA card works.
+## Useful References
+
+- [Andrej Karpathy's nanoGPT](https://github.com/karpathy/nanoGPT) — the reference implementation that inspired this project
+- [Karpathy's "Let's build GPT" video](https://www.youtube.com/watch?v=kCc8FmEb1nY) — single best video on the topic
+- [TinyStories paper](https://arxiv.org/abs/2305.07759) — Microsoft Research, 2023
+- [PyTorch Get Started](https://pytorch.org/get-started/locally/) — always-current install commands
