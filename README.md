@@ -27,8 +27,8 @@ You need basic Python familiarity. No ML background required; we build up from t
 | # | Episode | Status | Code |
 |---|---------|--------|------|
 | 01 | [Setup — environment and GPU verification](./episode-01-setup/) | ✅ Released | `GPUVerification.py` |
-| 02 | [Data and tokenization — choosing what to feed the model](./episode-02-data-and-tokenizer/) | 🎬 Recording | `train_tokenizer.py`, `prepare_data.py` |
-| 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | 📝 Drafting | — |
+| 02 | [Data and tokenization — choosing what to feed the model](./episode-02-data-and-tokenizer/) | ✅ Released  | `train_tokenizer.py`, `prepare_data.py` |
+| 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | 🎬 Recording | — |
 | 04 | [Building the model — attention, FFN, blocks](./episode-04-building-the-model/) | 📝 Planned | `model.py` |
 | 05 | [Training — the optimization story](./episode-05-training/) | 📝 Planned | `train.py` |
 | 06 | [Watching it learn — interpreting training curves](./episode-06-watching-it-learn/) | 📝 Planned | — |
@@ -45,7 +45,6 @@ If you want to dive in:
 
 1. **Start with [Episode 01](./episode-01-setup/)** to set up your environment.
 2. Follow the episodes in order — each builds on the previous.
-3. Or, if you just want the finished model, head to [`final-project/`](./final-project/) for the combined codebase.
 
 ---
 
