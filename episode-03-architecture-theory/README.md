@@ -70,7 +70,15 @@ Pick any two words from a curated library and see them as vectors. Each word is 
 
 The teaching moment: **words are vectors**, and meaning lives in the geometry. Similar words point in similar directions.
 
-### 02 — [Attention Visualizer](./02_attention_visualizer.html)
+### 02 — [Shape Flow](./02_shape_flow.html)
+
+A nine-step storyboard walking through how a tensor's shape evolves through the model. Click through with arrow keys or the navigation tabs.
+
+Each step has its own deep-dive panel structure: a **purpose framing** at the top (what state are we in coming in, what does this step accomplish), then mechanism panels below.
+
+**What to try:** start at Step 1 and walk through to Step 9. Each step builds on the previous. The Q/K/V breakdown in Step 4 and the expand/filter/compress breakdown of feed-forward are the most important panels in the whole episode.
+
+### 03 — [Attention Visualizer](./03_attention_visualizer.html)
 
 Type a sentence, click a token, watch what it attends to. Six hand-crafted attention heads are available, each with a different specialization:
 
@@ -86,14 +94,6 @@ Both a curved-arc visualization (above the tokens) and a heatmap matrix (below) 
 **What to try:** "The cat sat on the mat because it was tired" with the pronoun-resolution head. Click `it` and watch the attention curve back to `cat`.
 
 The teaching moment: **attention is asymmetric**. Each token has a question; it pulls in information from whoever has the best answer. Not all tokens look at all tokens equally.
-
-### 03 — [Shape Flow](./03_shape_flow.html)
-
-A nine-step storyboard walking through how a tensor's shape evolves through the model. Click through with arrow keys or the navigation tabs.
-
-Each step has its own deep-dive panel structure: a **purpose framing** at the top (what state are we in coming in, what does this step accomplish), then mechanism panels below.
-
-**What to try:** start at Step 1 and walk through to Step 9. Each step builds on the previous. The Q/K/V breakdown in Step 4 and the expand/filter/compress breakdown of feed-forward are the most important panels in the whole episode.
 
 ---
 
