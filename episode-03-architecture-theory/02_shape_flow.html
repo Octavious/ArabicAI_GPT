@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Shape Flow · Episode 03</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #1E5A7E;
+    --blue-dark: #0F3D5C;
+    --orange: #D87545;
+    --orange-light: #fae0d0;
+    --teal: #1d9e75;
+    --rose: #d4537e;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --faint: #a8a8a8;
+    --line: #e5e5e5;
+    --bg: #faf8f3;
+    --panel: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(216, 117, 69, 0.05), transparent 55%),
+      radial-gradient(circle at 88% 100%, rgba(30, 90, 126, 0.04), transparent 60%);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 48px 28px 96px; }
+
+  header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 16px;
+  }
+  h1 em { color: var(--orange); font-style: italic; font-weight: 400; }
+
+  .lede {
+    font-family: 'Newsreader', serif;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  /* Step navigation strip */
+  .step-nav {
+    display: flex;
+    gap: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 32px;
+  }
+
+  .step-tab {
+    flex: 1;
+    min-width: 110px;
+    padding: 14px 10px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+  }
+
+  .step-tab:last-child { border-right: none; }
+
+  .step-tab:hover {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .step-tab.active {
+    background: var(--blue-dark);
+    color: white;
+  }
+
+  .step-tab .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .step-tab .step-name {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    display: block;
+  }
+
+  /* Step header (sticky-ish) */
+  .step-header {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px 4px 0 0;
+    padding: 28px 36px;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .step-header-text { flex: 1; min-width: 280px; }
+
+  .step-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 6px;
+  }
+
+  .step-header h2 {
+    font-family: 'Newsreader', serif;
+    font-size: 32px;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  .step-header .subtitle {
+    font-family: 'Newsreader', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  .shape-card {
+    background: var(--blue-dark);
+    color: white;
+    padding: 14px 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    min-width: 220px;
+  }
+
+  .shape-card .shape-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 6px;
+  }
+
+  .shape-card .shape-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--orange-light);
+    letter-spacing: -0.01em;
+  }
+
+  /* Body — the multi-panel content */
+  .step-body {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 1px dashed var(--line);
+    border-radius: 0 0 4px 4px;
+    padding: 36px 40px;
+    margin-bottom: 24px;
+  }
+
+  /* Panels */
+  .panel {
+    margin-bottom: 36px;
+    padding-bottom: 32px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .panel:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+  .panel-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .panel-num {
+    font-family: 'Newsreader', serif;
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--orange);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-family: 'Newsreader', serif;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .panel-body {
+    margin-left: 50px;
+  }
+
+  .panel-body p {
+    font-family: 'Newsreader', serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .panel-body p:last-child { margin-bottom: 0; }
+  .panel-body strong { font-weight: 600; }
+  .panel-body em { color: var(--orange); font-style: italic; }
+
+  .panel-viz {
+    margin: 22px 0;
+    padding: 24px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+
+  .panel-viz svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .panel-callout {
+    background: var(--orange-light);
+    border-left: 3px solid var(--orange);
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 0 3px 3px 0;
+    font-family: 'Newsreader', serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .panel-callout strong { font-weight: 600; }
+
+  /* Purpose panel — opens every step with what/why framing */
+  .panel.purpose {
+    background: linear-gradient(135deg, rgba(30, 90, 126, 0.04), rgba(216, 117, 69, 0.03));
+    margin: -36px -40px 24px;
+    padding: 32px 40px;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0 0 4px 4px;
+  }
+
+  .panel.purpose .panel-num {
+    color: var(--blue);
+  }
+
+  .panel.purpose .purpose-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 18px;
+    align-items: start;
+    margin: 14px 0;
+  }
+
+  .panel.purpose .purpose-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 4px;
+    text-align: right;
+  }
+
+  .panel.purpose .purpose-row.coming .purpose-label {
+    color: var(--blue);
+  }
+  .panel.purpose .purpose-row.outcome .purpose-label {
+    color: var(--orange);
+  }
+
+  .panel.purpose .purpose-text {
+    font-family: 'Newsreader', serif;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .panel.purpose .purpose-text strong {
+    font-weight: 600;
+  }
+
+  /* Code/math */
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    background: var(--bg);
+    padding: 10px 14px;
+    border-radius: 3px;
+    display: inline-block;
+    color: var(--blue);
+    margin: 4px 0;
+  }
+
+  /* Two-column compare layout */
+  .compare-2 {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin: 16px 0;
+  }
+
+  .compare-2 .compare-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--orange);
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .compare-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px;
+  }
+
+  .compare-card .compare-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* SVG-friendly text classes */
+  text.label-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; fill: var(--muted); }
+  text.label-large { font-family: 'JetBrains Mono', monospace; font-size: 14px; fill: var(--ink); font-weight: 500; }
+  text.label-small { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--muted); }
+  text.callout { font-family: 'Newsreader', serif; font-size: 14px; fill: var(--ink); font-style: italic; }
+
+  /* Navigation controls */
+  .nav-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 14px 24px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    background: var(--orange);
+    color: white;
+    border-color: var(--orange);
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .footer-note {
+    margin-top: 36px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+
+  .footer-note strong { color: var(--ink); }
+
+  @media (max-width: 760px) {
+    .container { padding: 32px 16px 60px; }
+    .step-body { padding: 24px 20px; }
+    .panel-body { margin-left: 0; }
+    .step-tab .step-name { display: none; }
+    .step-tab { min-width: 60px; padding: 14px 6px; }
+    .compare-2 { grid-template-columns: 1fr; }
+    .compare-2 .compare-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="kicker">Episode 03 · Visualization 03</div>
+    <h1>How a tensor <em>flows</em> through the model.</h1>
+    <p class="lede">
+      Eight stops on the journey from raw token IDs to a probability distribution over the next word.
+      Each step explained in detail — what changes, why it changes, and what stays the same.
+    </p>
+  </header>
+
+  <div class="step-nav" id="stepNav"></div>
+
+  <div class="step-header" id="stepHeader"></div>
+  <div class="step-body" id="stepBody"></div>
+
+  <div class="nav-controls">
+    <button class="nav-btn prev" id="prevBtn">← Previous step</button>
+    <button class="nav-btn next" id="nextBtn">Next step →</button>
+  </div>
+
+  <div class="footer-note">
+    Throughout: <strong>B</strong> = batch size (32 sequences in parallel),
+    <strong>T</strong> = sequence length (256 tokens), <strong>C</strong> = embedding dimension
+    (384 numbers per token), <strong>V</strong> = vocabulary size (4,096 possible tokens).
+    These are the exact shapes your trained model uses.
+  </div>
+
+</div>
+
+<script>
+/* ================================================================
+   STEPS — each step is now a richer multi-panel narrative
+================================================================ */
+
+const STEPS = [
+
+  /* ============================================================
+     STEP 1 — Tokens
+  ============================================================ */
+  {
+    name: 'Tokens',
+    title: 'The model receives token IDs',
+    subtitle: 'Just integers. No meaning yet.',
+    shape: '(B, T)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Picture a row of empty seats. We have a sentence to process, but no students sitting yet.`,
+        outcome: `Seat one student per word. Each gets a card with a <strong>number</strong> printed on it
+          — that number identifies which word they're holding. The row of seated students is our input to the model.`,
+      },
+      {
+        title: 'Where the numbers come from',
+        body: `<p>The tokenizer we built in Episode 2 hands out the cards. It looks at the sentence
+          and decides: this piece is card 432, this next piece is card 448, and so on.
+          The student in seat 1 gets card 432, seat 2 gets card 448, etc.</p>`,
+        viz: 'tokens-1',
+      },
+      {
+        title: 'Why we run 32 classrooms at once',
+        body: `<p>Instead of one classroom, we run 32 classrooms in parallel — each with its own row of students,
+          each working on a different sentence. The GPU is built for this kind of parallel work,
+          so doing 32 at once isn't 32× slower — it's only 2-3× slower.</p>`,
+        viz: 'tokens-2',
+      },
+      {
+        title: 'Card 365 doesn\'t "mean" Lily — yet',
+        callout: `Card 365 is just a label. It's "Lily" only because the tokenizer happened to assign that number.
+          The card itself has no meaning written on it yet. The model has to <em>learn</em> what each card means.
+          That's the next step.`,
+        viz: null,
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 2 — Token Embeddings
+  ============================================================ */
+  {
+    name: 'Token Embeddings',
+    title: 'Each ID becomes a 384-dim vector',
+    subtitle: 'Now the numbers carry meaning.',
+    shape: '(B, T, C)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Each student is holding a card with a number — but a number alone tells you nothing.
+          Card 365 isn't "bigger" than card 89; the numbers are just labels.`,
+        outcome: `Give each card a real <strong>meaning</strong>. The word "Lily" gets a list of properties:
+          a little bit of "person," a little bit of "name," a little bit of "small," and so on.
+          Similar words end up with similar property lists.`,
+      },
+      {
+        title: 'A giant dictionary, learned during training',
+        body: `<p>The model keeps a dictionary with 4,096 entries — one for every possible card.
+          Each entry is a list of 384 properties describing what that card means.
+          (4,096 × 384 = 1.6 million numbers, all learned during training.)</p>`,
+        viz: 'embeddings-1',
+      },
+      {
+        title: 'Look up each card, copy its meaning',
+        body: `<p>Each student trades their card-number for the dictionary entry that describes it.
+          Card 365 → "the entry for Lily" — a list of 384 properties.
+          After training, similar words have similar property lists ("Lily" and "Tim" look alike;
+          "Lily" and "explosion" don't).</p>`,
+        viz: 'embeddings-2',
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 3 — Positional Embeddings
+  ============================================================ */
+  {
+    name: '+ Position',
+    title: 'Add positional information',
+    subtitle: 'Without this, "the cat sat" and "sat the cat" look identical.',
+    shape: '(B, T, C)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Each student now knows what their word means — but they don't know <em>where</em> they're sitting.
+          To them, "the cat sat" and "sat the cat" feel the same.`,
+        outcome: `Tell each student their <strong>seat number</strong>. Now their card carries two things:
+          what their word means, and where in the row they sit. Order matters now.`,
+      },
+      {
+        title: 'Why position matters',
+        body: `<p>Without seat numbers, the students would form a <em>set</em>, not a row.
+          "The cat sat on the mat" and "mat the on sat cat the" have identical students — just different seats.
+          To us, one is a sentence and the other is gibberish. To the model (so far), they look the same.</p>`,
+        viz: 'pos-1',
+      },
+      {
+        title: 'A second dictionary, this one for seats',
+        body: `<p>We make a second dictionary — but instead of cards, this one is keyed by <em>seat number</em>.
+          Seat 0 has its own 384-number signature, seat 1 has another, all the way up to seat 255.
+          These are also learned during training.</p>`,
+        viz: 'pos-2',
+      },
+      {
+        title: 'Each student adds the two together',
+        body: `<p>Every student takes their card's meaning and combines it with their seat's signature
+          by adding them, number by number. Now their card encodes both <em>what their word is</em>
+          and <em>where they sit</em>.</p>`,
+        viz: 'pos-3',
+      },
+      {
+        title: 'Why add and not stack?',
+        callout: `We could stack the two pieces of info side by side instead of adding them — but that would
+          double the size of every card and double every downstream cost.
+          With 384 dimensions to play with, the model has plenty of room to use some for word-meaning
+          and others for position-meaning, even when they're added together.`,
+        viz: null,
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 4 — Transformer Block (structure)
+  ============================================================ */
+  {
+    name: 'Transformer Block',
+    title: 'Pass through 6 stacked blocks',
+    subtitle: 'First, what one block actually contains.',
+    shape: '(B, T, C)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `The students know their own words and seats — but they haven't talked to each other yet.
+          The student holding "cat" doesn't know there's a "mat" student further down the row.`,
+        outcome: `Let the students <strong>turn around and read each other's cards</strong>, then quietly think about what they learned.
+          We do this six rounds. By the end, each student has a much richer understanding of where they fit in the sentence.`,
+      },
+      {
+        title: 'Each round leaves the row unchanged in size',
+        body: `<p>A round of "talk and think" doesn't add or remove students — same row in, same row out.
+          Each student just walks away with updated notes on their card.</p>
+          <p>That's why we can do six rounds: round 2 expects the same setup as round 1.
+          In tensor terms: shape (B, T, C) goes in, shape (B, T, C) comes out.</p>`,
+        viz: 'blocks-1',
+      },
+      {
+        title: 'Each round has two parts',
+        body: `<p><strong>Talk</strong> — students turn around and read each other's cards.
+          Information flows between them. The technical name: <em>attention</em>.</p>
+          <p><strong>Think</strong> — each student then sits quietly and processes what they learned.
+          Each student works alone. The technical name: <em>feed-forward network</em>.</p>`,
+        viz: 'blocks-2',
+      },
+      {
+        title: 'How "talk" works — Q, K, and V',
+        body: `<p>The conversation isn't symmetric. Each student decides <em>for themselves</em> what
+          they need from the room — two students looking at the same row can pay attention to completely
+          different things, because their questions are different.</p>
+          <p>To make this work, every student forms <strong>three things</strong> from their card,
+          via three learned transformations:</p>
+          <p><strong>Q (Query)</strong> — "what kind of word would help me right now?"<br/>
+          <strong>K (Key)</strong> — "here's what I am, in case anyone needs me."<br/>
+          <strong>V (Value)</strong> — "here's the actual content I'd share."</p>
+          <p>Each student matches their Q against everyone's K. Whoever matches best wins more attention,
+          and the student receives a <strong>weighted blend of everyone's V's</strong> — heavily weighted
+          toward those whose K matched the Q:</p>`,
+        viz: 'blocks-attention',
+      },
+      {
+        title: 'How "think" works — expand, filter, compress',
+        body: `<p>After attention, each student has a card mixed with bits of context from others — but it's
+          a messy collection of gathered notes. Now they transform that collection into something more useful.
+          Three sub-steps, each student working alone:</p>
+          <p><strong>1. Expand.</strong> Stretch the 384-number card into a 1,536-number working space (4× wider).
+          Imagine copying the notes onto a much bigger sheet while applying many learned "lenses" — each lens
+          highlighting a different combination of what's on the card.</p>
+          <p><strong>2. Filter.</strong> Run each of those 1,536 numbers through a function that keeps positives
+          and suppresses negatives. <em>This is the most important step.</em> Without it, the whole feed-forward
+          would collapse into a single linear transformation and add nothing useful.</p>
+          <p><strong>3. Compress.</strong> Squeeze the 1,536-number working space back down to 384, ready for the next round.</p>
+          <p>The net effect: things that should be emphasized are emphasized, useful combinations get computed,
+          irrelevant signals are suppressed. <strong>Most of the model's parameters live here</strong> — roughly
+          twice as many as in attention. A lot of the heavy thinking happens during "think."</p>`,
+        viz: 'blocks-ffn',
+      },
+      {
+        title: 'A common misconception worth flagging',
+        callout: `Many people assume attention "is" the model — that's where the magic happens.
+          But research has shown the feed-forward does just as much work, perhaps more.
+          Some interpretability studies have found that specific facts ("Paris is the capital of France")
+          are stored <em>in the feed-forward weights</em>, not in attention.
+          Roughly: <strong>attention is the model's communication system; feed-forward is its computation</strong>.`,
+        viz: null,
+      },
+      {
+        title: 'Two helpers wrap each part',
+        body: `<p>Before each part, the teacher says <em>"settle down, everyone"</em> — that's <strong>LayerNorm</strong>,
+          keeping notes at a calm volume.</p>
+          <p>And whatever students learn, they don't throw away their old notes — they keep both,
+          adding the new on top of the old. That's a <strong>residual connection</strong>.</p>
+          <p>The full picture of one round:</p>`,
+        viz: 'blocks-6',
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 5 — Why It Works
+  ============================================================ */
+  {
+    name: 'Why It Works',
+    title: 'Why the block is built this way',
+    subtitle: 'Three design choices that make deep transformers possible.',
+    shape: '(B, T, C)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `You've seen the rules of one round of "talk, then think" — but why these particular rules?
+          Why six rounds? Why is anyone allowed to keep their original card?`,
+        outcome: `Three design choices that make the conversation actually <em>work</em>.
+          Without them: students would forget what they learned, deeper rounds wouldn't help, or the whole class would get too loud.`,
+      },
+      {
+        title: 'Why both — attention vs feed-forward do different jobs',
+        body: `<p>Many people assume attention is "where the magic happens." But research has shown
+          the feed-forward does just as much work, perhaps more.</p>
+          <p>You can think of it this way: <strong>attention is the network's communication system</strong> —
+          it decides which information should flow to which token. <strong>The feed-forward is the network's
+          computation</strong> — it's where information actually gets transformed and where most facts get stored.</p>
+          <p>Specific facts ("Paris is the capital of France") have been traced to feed-forward weights, not attention.
+          Attention routes; feed-forward thinks and remembers. Both are essential, and roughly two-thirds of the
+          model's parameters live in the feed-forward.</p>`,
+        viz: null,
+      },
+      {
+        title: 'Why students keep their original notes',
+        body: `<p>What if students <em>replaced</em> their old notes with new ones each round?
+          By round 6 they would have forgotten what their word originally meant.</p>
+          <p>Instead, the new round adds <em>on top of</em> the old. The original notes are always available,
+          and the conversation builds upward. (In math: this also makes the model trainable —
+          the learning signal can flow back through every round.)</p>`,
+        viz: 'blocks-4',
+      },
+      {
+        title: 'Why six rounds, not one',
+        body: `<p>One round only lets neighboring students learn from each other.
+          But understanding language often needs multiple hops — to know that "it" refers to "the cat"
+          two clauses earlier, you have to identify "it," look back, find "cat," and connect them.
+          That's at least three rounds of reasoning.</p>
+          <p>Each round handles a different level of abstraction:</p>`,
+        viz: 'blocks-5',
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 6 — Final LayerNorm
+  ============================================================ */
+  {
+    name: 'Final LayerNorm',
+    title: 'One last normalization',
+    subtitle: 'Cleaning up before the final classifier.',
+    shape: '(B, T, C)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `After six rounds of conversation, the students have accumulated lots of notes —
+          some have gotten loud and excitable, others have written tiny illegible scribbles.`,
+        outcome: `One last <strong>"settle down, everyone"</strong> moment. Make sure every student's notes are at a calm,
+          readable volume before the final test.`,
+      },
+      {
+        title: 'Why we need this',
+        body: `<p>Because students kept adding to their notes round after round, some of those notes
+          have become very large numbers — illegibly large. Time to bring them back to a clean range.</p>`,
+        viz: 'ln-1',
+      },
+      {
+        title: 'How the "settle down" works',
+        body: `<p>For each student's notes: rescale them so the average is 0 and the spread is 1.
+          Then apply two learned per-dimension parameters (γ and β) — they let the model gently re-stretch
+          the notes if doing so helps.</p>`,
+        viz: 'ln-2',
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 7 — Output Projection
+  ============================================================ */
+  {
+    name: 'Output Projection',
+    title: 'Project to vocabulary scores',
+    subtitle: 'Each token gets a score for every possible next word.',
+    shape: '(B, T, V)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Each student has a card full of rich notes — what their word means, where it sits,
+          what they learned from the conversation.`,
+        outcome: `Now ask each student: <strong>"based on everything you know, what word do you think comes next?"</strong>
+          They write a score for every possible next word in the dictionary. Higher score = better guess.`,
+      },
+      {
+        title: 'From a 384-number card to 4,096 word-scores',
+        body: `<p>One final transformation expands each student's 384-number card into 4,096 numbers
+          — one score for every word in our vocabulary.</p>
+          <p>These scores have a name: <strong>logits</strong>. Raw preference scores, not yet percentages.</p>`,
+        viz: 'proj-1',
+      },
+      {
+        title: 'Every student predicts in parallel',
+        body: `<p>Every student in the row writes their guess simultaneously — not just the last student.
+          Student 1 predicts what comes after them; student 2 predicts what comes after <em>them</em>;
+          and so on for all 256 positions. That parallelism is what makes training fast.</p>`,
+        viz: 'proj-2',
+      },
+      {
+        title: 'A clever space-saver',
+        callout: `The same dictionary that turned numbers into meanings (Step 2) is reused here in reverse —
+          to turn meanings back into number-scores. One dictionary, two directions.
+          This trick (called <em>weight tying</em>) saves us ~1.6 million parameters.`,
+        viz: null,
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 8 — Softmax
+  ============================================================ */
+  {
+    name: 'Softmax',
+    title: 'Logits become probabilities',
+    subtitle: 'From raw scores to a distribution that sums to 1.',
+    shape: '(B, T, V)',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Each student wrote raw scores — "I really like 'mat' as the next word, somewhat like 'rug', dislike 'banana'."
+          But the numbers are messy: some huge, some negative.`,
+        outcome: `Turn those rough preferences into clean <strong>percentages</strong>:
+          "32% chance it's 'mat', 18% chance it's 'rug'..." All scores positive, all adding up to 100%.`,
+      },
+      {
+        title: 'How to convert preferences to percentages',
+        body: `<p>Take exp() of each score (this makes all values positive and amplifies the differences),
+          then divide each by the sum of all of them. Result: a clean probability distribution.
+          The student's strong preferences become high percentages; the weak ones nearly 0%.</p>`,
+        viz: 'soft-1',
+      },
+      {
+        title: 'Same numbers of students, same vocabulary — just cleaner numbers',
+        body: `<p>We didn't change anyone's ranking — the favorite is still the favorite.
+          We just turned messy preference scores into clean percentages we can do real math with:
+          compare, sample from, or grade.</p>`,
+        viz: 'soft-2',
+      },
+    ],
+  },
+
+  /* ============================================================
+     STEP 9 — Loss / Sample
+  ============================================================ */
+  {
+    name: 'Loss / Sample',
+    title: 'Use the probabilities',
+    subtitle: 'The same distribution, two different uses.',
+    shape: 'scalar / token',
+    panels: [
+      {
+        purpose: true,
+        title: 'What this step is for',
+        coming: `Each student has handed in their guess — a percentage for every possible next word. Now we do one of two things.`,
+        outcome: `<strong>If training:</strong> the teacher checks how much probability the student put on the <em>actual</em> next word
+          and grades them. <strong>If generating:</strong> we pick one of their high-probability guesses and add a new student to the row.`,
+      },
+      {
+        title: 'During training: how confident was the right answer?',
+        body: `<p>The teacher knows the actual next word. She looks at each student's percentages,
+          finds the percentage assigned to the right answer, and grades it. High confidence = good grade.
+          Average all the grades to get the class's loss for this batch.</p>`,
+        viz: 'loss-1',
+      },
+      {
+        title: 'During generation: pick a word and add a new student',
+        body: `<p>At generation time the teacher doesn't know the answer — that's the whole point;
+          we want the model to invent it. So we look at the last student's percentages and randomly pick a word
+          weighted by them. A new student is seated, holding that word's card.</p>`,
+        viz: 'loss-2',
+      },
+      {
+        title: 'And then we do the whole thing again',
+        callout: `One new student in the row, and we restart the entire 9-step pipeline — re-tokenize,
+          re-embed, six rounds of conversation, predict the next word, seat the next student.
+          Repeat 200 times to write a short story.`,
+        viz: null,
+      },
+    ],
+  },
+
+];
+
+
+/* ================================================================
+   VISUALIZATIONS
+================================================================ */
+
+const VIZ = {
+
+  // STEP 1
+  'tokens-1': () => `
+    <svg viewBox="0 0 1080 240">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">a single sequence — 11 tokens (output from our trained tokenizer)</text>
+
+      <text class="label-large" x="60" y="78">"Once upon a time Lily found a needle in her room"</text>
+      <text class="label-mono" x="60" y="100">↓ tokenizer ↓</text>
+
+      <g transform="translate(50, 120)">
+        ${[432, 448, 260, 397, 365, 596, 260, 3733, 317, 310, 759].map((id, i) => `
+          <rect x="${i * 90}" y="0" width="80" height="36" fill="#1E5A7E" rx="3" />
+          <text x="${i * 90 + 40}" y="22" text-anchor="middle" fill="white"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;">${id}</text>
+        `).join('')}
+      </g>
+
+      <g transform="translate(50, 165)">
+        ${['Once','·upon','·a','·time','·Lily','·found','·a','·needle','·in','·her','·room'].map((w, i) => `
+          <text x="${i * 90 + 40}" y="0" text-anchor="middle" class="label-small" style="fill: #6b6b6b;">${w}</text>
+        `).join('')}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="220" text-anchor="middle">
+        Each integer is just a token's ID number. No meaning yet.
+      </text>
+    </svg>
+  `,
+
+  'tokens-2': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">batch dimension: 32 sequences in parallel</text>
+
+      ${Array.from({length: 6}).map((_, row) => {
+        const ids = [432, 448, 260, 397, 365, 596];
+        return `
+          <g transform="translate(80, ${50 + row * 30})">
+            ${ids.map((id, i) => `
+              <rect x="${i * 70}" y="0" width="60" height="22" fill="#1E5A7E"
+                    opacity="${1 - row * 0.13}" rx="2" />
+              <text x="${i * 70 + 30}" y="15" text-anchor="middle" fill="white"
+                    style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">${id + row * 11}</text>
+            `).join('')}
+            <text class="label-small" x="-10" y="15" text-anchor="end">seq ${row + 1}</text>
+          </g>
+        `;
+      }).join('')}
+
+      <text class="label-small" x="80" y="240" text-anchor="start">seq 7…32: similar</text>
+
+      <line x1="75" y1="42" x2="75" y2="232" stroke="#D87545" stroke-width="2" />
+      <text class="label-mono" x="45" y="140" text-anchor="end"
+            style="font-weight: 500; fill: #D87545;">B = 32</text>
+    </svg>
+  `,
+
+  // STEP 2
+  'embeddings-1': () => `
+    <svg viewBox="0 0 1080 320">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">the embedding table — 4,096 rows × 384 columns</text>
+
+      <!-- Vocabulary table -->
+      <g transform="translate(60, 50)">
+        <rect x="0" y="0" width="100" height="240" fill="white" stroke="#1E5A7E" stroke-width="1" />
+        ${Array.from({length: 12}).map((_, i) => `
+          <line x1="0" y1="${i * 20}" x2="100" y2="${i * 20}" stroke="#e5e5e5" stroke-width="0.5" />
+        `).join('')}
+        ${['  0', '  1', '  2', '  3', '...', '364', '365', '366', '...', '4094', '4095', ''].map((id, i) => `
+          <text x="50" y="${15 + i * 20}" text-anchor="middle"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: ${i === 6 ? '#D87545' : '#6b6b6b'}; ${i === 6 ? 'font-weight: 700;' : ''}">${id}</text>
+        `).join('')}
+        <text class="label-small" x="50" y="-8" text-anchor="middle">token ID</text>
+      </g>
+
+      <!-- Arrow / brace showing "rows" -->
+      <text class="label-small" x="180" y="170">→</text>
+
+      <!-- Row content for token 365 ("·Lily") -->
+      <g transform="translate(220, 150)">
+        <rect x="0" y="0" width="800" height="40" fill="#fae0d0" stroke="#D87545" stroke-width="1" rx="2" />
+        ${Array.from({length: 60}).map((_, i) => {
+          const v = Math.sin(i * 0.7) * 0.6;
+          const h = Math.abs(v) * 14 + 4;
+          const y = v > 0 ? 20 - h : 20;
+          const color = v > 0 ? '#D87545' : '#1E5A7E';
+          return `<rect x="${10 + i * 13}" y="${y}" width="8" height="${h}" fill="${color}" opacity="0.85" rx="0.5" />`;
+        }).join('')}
+        <text class="label-small" x="400" y="60" text-anchor="middle">row 365 — 384 numbers — the "meaning vector" for "·Lily"</text>
+      </g>
+
+      <text class="label-mono" x="540" y="280" text-anchor="middle"
+            style="font-style: italic; fill: #6b6b6b;">vocabulary size = 4,096 rows total</text>
+    </svg>
+  `,
+
+  'embeddings-2': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">apply lookup to every token in every sequence</text>
+
+      <!-- Input -->
+      <g transform="translate(60, 60)">
+        <text class="label-small" x="0" y="-12">input: integer IDs</text>
+        ${[432, 448, 260, 397, 365, 596, 260].map((id, i) => `
+          <rect x="${i * 70}" y="0" width="60" height="32" fill="#1E5A7E" rx="3" />
+          <text x="${i * 70 + 30}" y="20" text-anchor="middle" fill="white"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${id}</text>
+        `).join('')}
+      </g>
+
+      <!-- Big arrow -->
+      <path d="M 540 100 L 540 130" stroke="#D87545" stroke-width="2" />
+      <polygon points="540,130 535,124 545,124" fill="#D87545" />
+      <text class="label-mono" style="fill: #D87545;" x="560" y="118">embedding lookup</text>
+
+      <!-- Output: a vector under each integer -->
+      <g transform="translate(60, 150)">
+        <text class="label-small" x="0" y="-12">output: 384-dim vectors</text>
+        ${[432, 448, 260, 397, 365, 596, 260].map((id, idx) => `
+          <g transform="translate(${idx * 70}, 0)">
+            <rect x="0" y="0" width="60" height="80" fill="#fae0d0" stroke="#D87545" stroke-width="1" rx="2" />
+            ${Array.from({length: 18}).map((_, i) => {
+              const seed = id + i * 7;
+              const v = Math.sin(seed * 0.3) * 0.6;
+              const h = Math.abs(v) * 12 + 2;
+              const y = 40 + (v > 0 ? -h : 0);
+              const color = v > 0 ? '#D87545' : '#1E5A7E';
+              return `<rect x="${4 + i * 3}" y="${y}" width="2" height="${h}" fill="${color}" opacity="0.85" />`;
+            }).join('')}
+          </g>
+        `).join('')}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="260" text-anchor="middle">
+        Each integer expands into 384 numbers. That's where meaning lives.
+      </text>
+    </svg>
+  `,
+
+  // STEP 3 — POSITION (heavily visualized)
+  'pos-1': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">the same set of words, two different orders</text>
+
+      <!-- Sentence A -->
+      <g transform="translate(60, 60)">
+        <text class="label-small" x="0" y="-10">SENTENCE A</text>
+        ${[
+          {w: 'the', id: 0},
+          {w: 'cat', id: 1},
+          {w: 'sat', id: 2},
+          {w: 'on', id: 3},
+          {w: 'the', id: 0},
+          {w: 'mat', id: 4},
+        ].map((tok, i) => `
+          <rect x="${i * 130}" y="0" width="120" height="34" fill="#1E5A7E" rx="3" />
+          <text x="${i * 130 + 60}" y="22" text-anchor="middle" fill="white"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${tok.w}</text>
+        `).join('')}
+        <text class="callout" x="370" y="58" text-anchor="middle">A real, grammatical sentence</text>
+      </g>
+
+      <!-- Sentence B -->
+      <g transform="translate(60, 160)">
+        <text class="label-small" x="0" y="-10">SENTENCE B — same tokens, shuffled</text>
+        ${[
+          {w: 'mat', id: 4},
+          {w: 'on', id: 3},
+          {w: 'the', id: 0},
+          {w: 'sat', id: 2},
+          {w: 'the', id: 0},
+          {w: 'cat', id: 1},
+        ].map((tok, i) => `
+          <rect x="${i * 130}" y="0" width="120" height="34" fill="#D87545" rx="3" />
+          <text x="${i * 130 + 60}" y="22" text-anchor="middle" fill="white"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${tok.w}</text>
+        `).join('')}
+        <text class="callout" style="fill: #D87545;" x="370" y="58" text-anchor="middle">Nonsense — but the same multiset of tokens</text>
+      </g>
+
+      <text class="label-large" style="fill: #a8385a;" x="540" y="265" text-anchor="middle">
+        Without position info, attention can't tell these apart.
+      </text>
+    </svg>
+  `,
+
+  'pos-2': () => `
+    <svg viewBox="0 0 1080 320">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">the positional embedding table — 256 rows × 384 columns</text>
+
+      <!-- Position table -->
+      <g transform="translate(60, 60)">
+        <rect x="0" y="0" width="120" height="220" fill="white" stroke="#1d9e75" stroke-width="1" />
+        ${Array.from({length: 11}).map((_, i) => `
+          <line x1="0" y1="${i * 20}" x2="120" y2="${i * 20}" stroke="#e5e5e5" stroke-width="0.5" />
+        `).join('')}
+        ${['pos 0', 'pos 1', 'pos 2', 'pos 3', 'pos 4', '...', 'pos 252', 'pos 253', 'pos 254', 'pos 255', ''].map((id, i) => `
+          <text x="60" y="${15 + i * 20}" text-anchor="middle"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #6b6b6b;">${id}</text>
+        `).join('')}
+        <text class="label-small" x="60" y="-8" text-anchor="middle">position</text>
+      </g>
+
+      <!-- Show each position has its own vector -->
+      <g transform="translate(220, 60)">
+        ${[0, 1, 2, 3].map((p, i) => `
+          <g transform="translate(0, ${i * 50})">
+            <text class="label-small" x="-10" y="14" text-anchor="end">pos ${p}:</text>
+            <rect x="0" y="0" width="780" height="22" fill="#e6f4ec" stroke="#1d9e75" stroke-width="0.5" rx="1" />
+            ${Array.from({length: 56}).map((_, j) => {
+              const seed = p * 13 + j * 0.4;
+              const v = Math.sin(seed) * 0.6;
+              const h = Math.abs(v) * 8 + 2;
+              const y = 11 + (v > 0 ? -h : 0);
+              const color = v > 0 ? '#1d9e75' : '#1E5A7E';
+              return `<rect x="${5 + j * 14}" y="${y}" width="3" height="${h}" fill="${color}" opacity="0.8" />`;
+            }).join('')}
+          </g>
+        `).join('')}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="300" text-anchor="middle">
+        Each row is a learned 384-number vector for that position. Just like the token table, but keyed by where, not what.
+      </text>
+    </svg>
+  `,
+
+  'pos-3': () => `
+    <svg viewBox="0 0 1080 380">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">add token + position vectors element-wise</text>
+
+      <!-- Token vector for "the" at position 0 -->
+      <g transform="translate(60, 60)">
+        <text class="label-small" x="0" y="-8">token embedding for "the"</text>
+        <rect x="0" y="0" width="900" height="36" fill="#fae0d0" stroke="#D87545" stroke-width="1" rx="2" />
+        ${Array.from({length: 64}).map((_, i) => {
+          const v = Math.sin(i * 0.5 + 1) * 0.7;
+          const h = Math.abs(v) * 14 + 2;
+          const y = 18 + (v > 0 ? -h : 0);
+          const color = v > 0 ? '#D87545' : '#1E5A7E';
+          return `<rect x="${10 + i * 14}" y="${y}" width="6" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+      </g>
+
+      <!-- Plus sign -->
+      <text x="540" y="125" text-anchor="middle"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 36px; fill: #D87545; font-weight: 300;">+</text>
+
+      <!-- Position vector for position 0 -->
+      <g transform="translate(60, 150)">
+        <text class="label-small" x="0" y="-8">positional embedding for position 0</text>
+        <rect x="0" y="0" width="900" height="36" fill="#e6f4ec" stroke="#1d9e75" stroke-width="1" rx="2" />
+        ${Array.from({length: 64}).map((_, i) => {
+          const v = Math.sin(i * 0.3 + 0.5) * 0.5;
+          const h = Math.abs(v) * 14 + 2;
+          const y = 18 + (v > 0 ? -h : 0);
+          const color = v > 0 ? '#1d9e75' : '#1E5A7E';
+          return `<rect x="${10 + i * 14}" y="${y}" width="6" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+      </g>
+
+      <!-- Equals -->
+      <text x="540" y="225" text-anchor="middle"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 28px; fill: #6b6b6b; font-weight: 300;">↓</text>
+
+      <!-- Result -->
+      <g transform="translate(60, 250)">
+        <text class="label-small" x="0" y="-8">"the" at position 0 — combined vector</text>
+        <rect x="0" y="0" width="900" height="44" fill="#1E5A7E" stroke="#0F3D5C" stroke-width="1.5" rx="2" />
+        ${Array.from({length: 64}).map((_, i) => {
+          const v = Math.sin(i * 0.5 + 1) * 0.7 + Math.sin(i * 0.3 + 0.5) * 0.5;
+          const h = Math.abs(v) * 12 + 3;
+          const y = 22 + (v > 0 ? -h : 0);
+          const color = v > 0 ? '#fae0d0' : '#fff';
+          return `<rect x="${10 + i * 14}" y="${y}" width="6" height="${h}" fill="${color}" opacity="0.9" />`;
+        }).join('')}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="335" text-anchor="middle">
+        Encodes both <tspan fill="#D87545" font-weight="600">what the token is</tspan>
+        and <tspan fill="#1d9e75" font-weight="600">where it sits in the sequence</tspan>.
+      </text>
+    </svg>
+  `,
+
+  // STEP 4 — TRANSFORMER BLOCK (heavily visualized)
+  'blocks-1': () => `
+    <svg viewBox="0 0 1080 200">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">a block preserves shape — that's why we can stack them</text>
+
+      <!-- Input -->
+      <rect x="60" y="60" width="120" height="60" fill="#1E5A7E" rx="3" />
+      <text x="120" y="92" text-anchor="middle" fill="white"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">input</text>
+      <text x="120" y="108" text-anchor="middle" fill="white"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: 0.7;">(B, T, C)</text>
+
+      <!-- Arrow -->
+      <path d="M 200 90 L 240 90" stroke="#6b6b6b" stroke-width="1.5" />
+      <polygon points="240,90 234,86 234,94" fill="#6b6b6b" />
+
+      <!-- Block -->
+      <rect x="260" y="55" width="280" height="70" fill="#fae0d0" stroke="#D87545" stroke-width="2" rx="4" />
+      <text x="400" y="86" text-anchor="middle"
+            style="font-family: 'Newsreader', serif; font-size: 18px; font-weight: 500; fill: #1E5A7E;">transformer block</text>
+      <text x="400" y="105" text-anchor="middle" class="label-small">attention + feed-forward</text>
+
+      <!-- Arrow -->
+      <path d="M 560 90 L 600 90" stroke="#6b6b6b" stroke-width="1.5" />
+      <polygon points="600,90 594,86 594,94" fill="#6b6b6b" />
+
+      <!-- Output -->
+      <rect x="620" y="60" width="120" height="60" fill="#1E5A7E" rx="3" />
+      <text x="680" y="92" text-anchor="middle" fill="white"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">output</text>
+      <text x="680" y="108" text-anchor="middle" fill="white"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: 0.7;">(B, T, C)</text>
+
+      <!-- Equality call -->
+      <text x="400" y="170" text-anchor="middle" class="callout"
+            style="font-weight: 500; fill: #D87545;">same shape — that's the magic</text>
+    </svg>
+  `,
+
+  'blocks-2': () => `
+    <svg viewBox="0 0 1080 320">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">two sub-layers, two different jobs</text>
+
+      <!-- Mixing diagram for attention -->
+      <g transform="translate(60, 70)">
+        <rect x="0" y="0" width="450" height="220" fill="white" stroke="#D87545" stroke-width="1.5" rx="4" />
+        <text x="225" y="30" text-anchor="middle"
+              style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; fill: #5a2410;">Attention</text>
+        <text x="225" y="50" text-anchor="middle" class="label-small">tokens look at each other</text>
+
+        <!-- Six tokens with crossing connection lines -->
+        ${[0,1,2,3,4,5].map(i => `
+          <circle cx="${50 + i * 70}" cy="100" r="14" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" />
+          <text x="${50 + i * 70}" y="105" text-anchor="middle" class="label-small"
+                style="font-weight: 600; fill: #5a2410;">${i}</text>
+        `).join('')}
+
+        <!-- Connection lines crossing -->
+        ${[
+          [0,3],[1,4],[2,5],[0,2],[1,3],[3,5]
+        ].map(([a, b]) => `
+          <path d="M ${50 + a * 70} 86 Q ${(50 + a * 70 + 50 + b * 70) / 2} 50 ${50 + b * 70} 86"
+                fill="none" stroke="#D87545" stroke-width="1" opacity="0.5" />
+        `).join('')}
+
+        <text x="225" y="170" text-anchor="middle" class="callout" style="fill: #6b6b6b;">
+          Information flows between positions
+        </text>
+        <text x="225" y="195" text-anchor="middle" class="label-small" style="fill: #5a2410;">
+          MIXES across tokens
+        </text>
+      </g>
+
+      <!-- Per-token diagram for FFN -->
+      <g transform="translate(560, 70)">
+        <rect x="0" y="0" width="450" height="220" fill="white" stroke="#1E5A7E" stroke-width="1.5" rx="4" />
+        <text x="225" y="30" text-anchor="middle"
+              style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; fill: #1E5A7E;">Feed-Forward</text>
+        <text x="225" y="50" text-anchor="middle" class="label-small">each token thinks alone</text>
+
+        ${[0,1,2,3,4,5].map(i => `
+          <circle cx="${50 + i * 70}" cy="100" r="14" fill="#cce0e8" stroke="#1E5A7E" stroke-width="1.5" />
+          <text x="${50 + i * 70}" y="105" text-anchor="middle" class="label-small"
+                style="font-weight: 600; fill: #1E5A7E;">${i}</text>
+
+          <!-- Loop arrow showing self-processing -->
+          <circle cx="${50 + i * 70}" cy="155" r="8" fill="none" stroke="#1E5A7E" stroke-width="1" opacity="0.5" />
+          <path d="M ${50 + i * 70 - 1} 116 L ${50 + i * 70 - 1} 145" stroke="#1E5A7E" stroke-width="1" opacity="0.5" />
+        `).join('')}
+
+        <text x="225" y="195" text-anchor="middle" class="label-small" style="fill: #1E5A7E;">
+          REFINES per token
+        </text>
+      </g>
+    </svg>
+  `,
+
+  /* ============ Q/K/V attention mechanism ============ */
+  'blocks-attention': () => `
+    <svg viewBox="0 0 1080 380">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">how one student "looks at" the others — Q, K, V</text>
+
+      <!-- The current student (the one paying attention) -->
+      <g transform="translate(60, 60)">
+        <text class="label-small" x="0" y="0" style="fill: #6b6b6b;">The "cat" student</text>
+        <circle cx="60" cy="40" r="24" fill="#fae0d0" stroke="#D87545" stroke-width="2" />
+        <text x="60" y="46" text-anchor="middle" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; fill: #5a2410; font-weight: 600;">cat</text>
+
+        <!-- Three derived things from the same card -->
+        <text class="label-small" x="160" y="20" style="fill: #6b6b6b;">forms three things from their card:</text>
+
+        <g transform="translate(160, 35)">
+          <rect x="0" y="0" width="240" height="32" fill="white" stroke="#1E5A7E" stroke-width="1.5" rx="3" />
+          <text x="12" y="20" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #1E5A7E; font-weight: 600;">Q</text>
+          <text x="36" y="20" style="font-family: 'Newsreader', serif; font-size: 13px; fill: #1a1a1a; font-style: italic;">"what am I looking for?"</text>
+        </g>
+
+        <g transform="translate(160, 75)">
+          <rect x="0" y="0" width="240" height="32" fill="white" stroke="#1d9e75" stroke-width="1.5" rx="3" />
+          <text x="12" y="20" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #1d9e75; font-weight: 600;">K</text>
+          <text x="36" y="20" style="font-family: 'Newsreader', serif; font-size: 13px; fill: #1a1a1a; font-style: italic;">"here's what I am"</text>
+        </g>
+
+        <g transform="translate(160, 115)">
+          <rect x="0" y="0" width="240" height="32" fill="white" stroke="#D87545" stroke-width="1.5" rx="3" />
+          <text x="12" y="20" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #D87545; font-weight: 600;">V</text>
+          <text x="36" y="20" style="font-family: 'Newsreader', serif; font-size: 13px; fill: #1a1a1a; font-style: italic;">"here's the info I'd share"</text>
+        </g>
+      </g>
+
+      <!-- Now matching against other students -->
+      <text class="label-small" x="60" y="220" style="fill: #6b6b6b;">Now compare cat's Q against everyone's K — find the best matches:</text>
+
+      <!-- Other students with their K and matching scores -->
+      <g transform="translate(60, 225)">
+        ${[
+          {word: 'the', match: 0.05, w: 60},
+          {word: 'cat', match: 0.10, w: 60},
+          {word: 'sat', match: 0.65, w: 60, winner: true},
+          {word: 'on', match: 0.04, w: 60},
+          {word: 'the', match: 0.03, w: 60},
+          {word: 'mat', match: 0.13, w: 60}
+        ].map((s, i) => {
+          const x = i * 100;
+          return `
+            <circle cx="${x + 30}" cy="20" r="18" fill="${s.winner ? '#fae0d0' : 'white'}"
+                    stroke="${s.winner ? '#D87545' : '#cccccc'}" stroke-width="${s.winner ? '2.5' : '1'}" />
+            <text x="${x + 30}" y="25" text-anchor="middle"
+                  style="font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                  fill: ${s.winner ? '#5a2410' : '#6b6b6b'}; font-weight: ${s.winner ? '600' : '400'};">${s.word}</text>
+
+            <!-- K bar showing match -->
+            <rect x="${x + 5}" y="55" width="50" height="6" fill="#e5e5e5" rx="2" />
+            <rect x="${x + 5}" y="55" width="${50 * s.match}" height="6" fill="#1d9e75" rx="2" />
+            <text x="${x + 30}" y="80" text-anchor="middle" class="label-small" style="font-size: 10px;">${(s.match*100).toFixed(0)}%</text>
+          `;
+        }).join('')}
+      </g>
+
+      <!-- Result -->
+      <text class="callout" x="540" y="335" text-anchor="middle" style="fill: #6b6b6b;">
+        "sat" wins most attention — cat student pulls in 65% of "sat"'s V, plus smaller pieces from others.
+      </text>
+      <text class="label-small" x="540" y="358" text-anchor="middle" style="fill: #D87545; font-weight: 500;">
+        Cat's card is now updated with what it needed to know.
+      </text>
+    </svg>
+  `,
+
+  /* ============ Feed-forward expand-activate-compress ============ */
+  'blocks-ffn': () => `
+    <svg viewBox="0 0 1080 320">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">how each student "thinks" — expand, filter, compress</text>
+
+      <!-- Three-stage pipeline -->
+      <!-- Input card (384) -->
+      <g transform="translate(40, 90)">
+        <text class="label-small" x="55" y="-10" text-anchor="middle" style="fill: #6b6b6b;">card after attention</text>
+        <rect x="0" y="0" width="110" height="60" fill="white" stroke="#1E5A7E" stroke-width="1.5" rx="3" />
+        ${Array.from({length: 14}).map((_, i) => {
+          const v = Math.sin(i * 0.7) * 0.5;
+          const h = Math.abs(v) * 18 + 4;
+          const y = v > 0 ? 30 - h : 30;
+          const color = v > 0 ? '#D87545' : '#1E5A7E';
+          return `<rect x="${10 + i * 7}" y="${y}" width="3" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+        <text x="55" y="80" text-anchor="middle" class="label-small">384 numbers</text>
+      </g>
+
+      <!-- Arrow + label -->
+      <path d="M 165 120 L 195 120" stroke="#D87545" stroke-width="2" />
+      <polygon points="195,120 189,116 189,124" fill="#D87545" />
+      <text x="180" y="108" text-anchor="middle" class="label-small" style="fill: #D87545; font-weight: 500; font-size: 11px;">expand</text>
+
+      <!-- Expanded (1536) -->
+      <g transform="translate(205, 75)">
+        <text class="label-small" x="135" y="-10" text-anchor="middle" style="fill: #6b6b6b;">expanded — wider working space</text>
+        <rect x="0" y="0" width="270" height="90" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" rx="3" />
+        ${Array.from({length: 50}).map((_, i) => {
+          const v = Math.sin(i * 0.4 + 1.2) * 0.6;
+          const h = Math.abs(v) * 30 + 6;
+          const y = v > 0 ? 45 - h : 45;
+          const color = v > 0 ? '#D87545' : '#1E5A7E';
+          return `<rect x="${8 + i * 5.2}" y="${y}" width="2.5" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+        <text x="135" y="110" text-anchor="middle" class="label-small">1,536 numbers · 4× wider</text>
+      </g>
+
+      <!-- Arrow + label -->
+      <path d="M 490 120 L 520 120" stroke="#D87545" stroke-width="2" />
+      <polygon points="520,120 514,116 514,124" fill="#D87545" />
+      <text x="505" y="108" text-anchor="middle" class="label-small" style="fill: #D87545; font-weight: 500; font-size: 11px;">filter</text>
+
+      <!-- Filtered (1536, but with negatives suppressed) -->
+      <g transform="translate(530, 75)">
+        <text class="label-small" x="135" y="-10" text-anchor="middle" style="fill: #6b6b6b;">filtered — keep useful signals</text>
+        <rect x="0" y="0" width="270" height="90" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" rx="3" />
+        ${Array.from({length: 50}).map((_, i) => {
+          const vRaw = Math.sin(i * 0.4 + 1.2) * 0.6;
+          // GELU-like: positives kept, negatives mostly suppressed
+          const v = vRaw > 0 ? vRaw : vRaw * 0.1;
+          const h = Math.abs(v) * 30 + 4;
+          const y = v > 0 ? 45 - h : 45;
+          const color = v > 0 ? '#D87545' : '#cccccc';
+          const opacity = v > 0 ? 0.85 : 0.5;
+          return `<rect x="${8 + i * 5.2}" y="${y}" width="2.5" height="${h}" fill="${color}" opacity="${opacity}" />`;
+        }).join('')}
+        <text x="135" y="110" text-anchor="middle" class="label-small">positive signals kept,<br/>negatives suppressed</text>
+      </g>
+
+      <!-- Arrow + label -->
+      <path d="M 815 120 L 845 120" stroke="#D87545" stroke-width="2" />
+      <polygon points="845,120 839,116 839,124" fill="#D87545" />
+      <text x="830" y="108" text-anchor="middle" class="label-small" style="fill: #D87545; font-weight: 500; font-size: 11px;">compress</text>
+
+      <!-- Output card (384) -->
+      <g transform="translate(855, 90)">
+        <text class="label-small" x="55" y="-10" text-anchor="middle" style="fill: #6b6b6b;">enhanced card</text>
+        <rect x="0" y="0" width="110" height="60" fill="white" stroke="#1d9e75" stroke-width="2" rx="3" />
+        ${Array.from({length: 14}).map((_, i) => {
+          const v = Math.sin(i * 0.7 + 0.5) * 0.7;
+          const h = Math.abs(v) * 22 + 4;
+          const y = v > 0 ? 30 - h : 30;
+          const color = v > 0 ? '#1d9e75' : '#1E5A7E';
+          return `<rect x="${10 + i * 7}" y="${y}" width="3" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+        <text x="55" y="80" text-anchor="middle" class="label-small">384 numbers</text>
+      </g>
+
+      <text class="callout" x="540" y="225" text-anchor="middle" style="fill: #6b6b6b;">
+        Same shape in, same shape out — but the numbers now reflect deeper computation.
+      </text>
+      <text class="label-small" x="540" y="248" text-anchor="middle" style="fill: #5a2410; font-weight: 500;">
+        Each student does this independently, no peeking at others.
+      </text>
+      <text class="label-small" x="540" y="280" text-anchor="middle" style="fill: #6b6b6b;">
+        ~2/3 of the model's parameters live here. This is where most of the actual "thinking" happens.
+      </text>
+    </svg>
+  `,
+
+  'blocks-3': () => `
+    <svg viewBox="0 0 1080 240">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">two scaffolding mechanisms wrap each sub-layer</text>
+
+      <!-- LayerNorm -->
+      <g transform="translate(60, 60)">
+        <rect x="0" y="0" width="430" height="140" fill="white" stroke="#1E5A7E" stroke-width="1.5" rx="4" />
+        <text x="215" y="32" text-anchor="middle"
+              style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; fill: #1E5A7E;">LayerNorm</text>
+
+        <!-- Bars showing rescale -->
+        <g transform="translate(50, 60)">
+          ${Array.from({length: 12}).map((_, i) => {
+            const v = (Math.sin(i * 1.7) * 1.5) + (Math.cos(i * 0.5) * 0.8);
+            const h = Math.abs(v) * 16;
+            const y = v > 0 ? 30 - h : 30;
+            const color = v > 0 ? '#D87545' : '#1E5A7E';
+            return `<rect x="${i * 12}" y="${y}" width="8" height="${h}" fill="${color}" opacity="0.85" rx="1" />`;
+          }).join('')}
+          <line x1="-5" y1="30" x2="148" y2="30" stroke="#6b6b6b" stroke-width="0.5" stroke-dasharray="2,2" />
+        </g>
+
+        <text x="220" y="110" text-anchor="middle" style="font-family: 'JetBrains Mono', monospace; font-size: 18px; fill: #6b6b6b;">→</text>
+
+        <g transform="translate(245, 60)">
+          ${Array.from({length: 12}).map((_, i) => {
+            const v = ((Math.sin(i * 1.7) * 1.5) + (Math.cos(i * 0.5) * 0.8)) * 0.55;
+            const h = Math.abs(v) * 16;
+            const y = v > 0 ? 30 - h : 30;
+            const color = v > 0 ? '#D87545' : '#1E5A7E';
+            return `<rect x="${i * 12}" y="${y}" width="8" height="${h}" fill="${color}" opacity="0.85" rx="1" />`;
+          }).join('')}
+          <line x1="-5" y1="30" x2="148" y2="30" stroke="#6b6b6b" stroke-width="0.5" stroke-dasharray="2,2" />
+        </g>
+
+        <text x="215" y="125" text-anchor="middle" class="label-small">keeps values gentle</text>
+      </g>
+
+      <!-- Residual -->
+      <g transform="translate(580, 60)">
+        <rect x="0" y="0" width="430" height="140" fill="white" stroke="#D87545" stroke-width="1.5" rx="4" />
+        <text x="215" y="32" text-anchor="middle"
+              style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; fill: #1E5A7E;">Residual</text>
+
+        <!-- Diagram: x → block → +x -->
+        <rect x="40" y="65" width="60" height="32" fill="#1E5A7E" rx="3" />
+        <text x="70" y="86" text-anchor="middle" class="label-small" style="font-weight: 500; fill: white;">x</text>
+
+        <path d="M 105 81 L 145 81" stroke="#6b6b6b" stroke-width="1.5" />
+        <polygon points="145,81 139,77 139,85" fill="#6b6b6b" />
+
+        <rect x="150" y="65" width="100" height="32" fill="#fae0d0" stroke="#D87545" stroke-width="1" rx="3" />
+        <text x="200" y="86" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #5a2410;">sublayer</text>
+
+        <path d="M 255 81 L 295 81" stroke="#6b6b6b" stroke-width="1.5" />
+        <polygon points="295,81 289,77 289,85" fill="#6b6b6b" />
+
+        <circle cx="310" cy="81" r="14" fill="#D87545" />
+        <text x="310" y="86" text-anchor="middle" fill="white"
+              style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600;">+</text>
+
+        <!-- Skip connection arc -->
+        <path d="M 70 64 Q 200 30 310 65" fill="none" stroke="#D87545" stroke-width="1.5"
+              stroke-dasharray="4,3" />
+        <text x="200" y="22" text-anchor="middle" class="label-small"
+              style="font-style: italic; fill: #D87545;">skip — original input</text>
+
+        <text x="215" y="125" text-anchor="middle" class="label-small">x = x + sublayer(x)</text>
+      </g>
+    </svg>
+  `,
+
+  'blocks-4': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">residuals create a "highway" for gradients during backprop</text>
+
+      <!-- Without residuals -->
+      <g transform="translate(60, 60)">
+        <text class="label-mono" style="fill: #a8385a;" x="0" y="0">WITHOUT residuals</text>
+
+        ${Array.from({length: 6}).map((_, i) => `
+          <rect x="${i * 70}" y="20" width="60" height="40" fill="#cce0e8" stroke="#1E5A7E" stroke-width="1" rx="2" />
+          <text x="${i * 70 + 30}" y="44" text-anchor="middle" class="label-small">layer ${i + 1}</text>
+        `).join('')}
+
+        <!-- Gradient flow shown as fading line -->
+        ${Array.from({length: 5}).map((_, i) => {
+          const opacity = 1 - (i + 1) * 0.18;
+          return `
+            <path d="M ${(i + 1) * 70} 80 L ${i * 70 + 60} 80"
+                  stroke="#a8385a" stroke-width="2" opacity="${opacity}" />
+            <polygon points="${i * 70 + 60},80 ${i * 70 + 66},76 ${i * 70 + 66},84"
+                     fill="#a8385a" opacity="${opacity}" />
+          `;
+        }).join('')}
+        <text class="label-small" style="fill: #a8385a;" x="200" y="100">gradient signal fades layer by layer</text>
+      </g>
+
+      <!-- With residuals -->
+      <g transform="translate(60, 160)">
+        <text class="label-mono" style="fill: #1d9e75;" x="0" y="0">WITH residuals</text>
+
+        ${Array.from({length: 6}).map((_, i) => `
+          <rect x="${i * 70}" y="20" width="60" height="40" fill="#e6f4ec" stroke="#1d9e75" stroke-width="1" rx="2" />
+          <text x="${i * 70 + 30}" y="44" text-anchor="middle" class="label-small">layer ${i + 1}</text>
+        `).join('')}
+
+        <!-- Highway line at full opacity -->
+        <line x1="60" y1="80" x2="430" y2="80" stroke="#1d9e75" stroke-width="2" />
+        ${Array.from({length: 5}).map((_, i) => `
+          <polygon points="${(5 - i) * 70 + 60},80 ${(5 - i) * 70 + 66},76 ${(5 - i) * 70 + 66},84" fill="#1d9e75" />
+        `).join('')}
+
+        <text class="label-small" style="fill: #1d9e75;" x="200" y="100">gradient flows back at full strength</text>
+      </g>
+    </svg>
+  `,
+
+  'blocks-5': () => `
+    <svg viewBox="0 0 1080 260">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">what each layer learns to recognize (in trained transformers)</text>
+
+      ${[
+        { label: 'layer 1', what: 'word identity, surface patterns' },
+        { label: 'layer 2', what: 'short n-grams, common bigrams' },
+        { label: 'layer 3', what: 'phrase structure, simple syntax' },
+        { label: 'layer 4', what: 'semantic relationships' },
+        { label: 'layer 5', what: 'discourse, longer dependencies' },
+        { label: 'layer 6', what: 'task-specific patterns, output shaping' },
+      ].map((layer, i) => `
+        <g transform="translate(60, ${50 + i * 32})">
+          <rect x="0" y="0" width="40" height="22" fill="${i < 2 ? '#cce0e8' : i < 4 ? '#fae0d0' : '#e3d0df'}"
+                stroke="${i < 2 ? '#1E5A7E' : i < 4 ? '#D87545' : '#6e2d5e'}" stroke-width="1" rx="2" />
+          <text x="20" y="15" text-anchor="middle" class="label-small">L${i + 1}</text>
+
+          <text x="55" y="15" class="label-large">${layer.label}</text>
+          <text x="170" y="15" class="callout" style="fill: #6b6b6b;">${layer.what}</text>
+
+          <!-- Abstraction arrow -->
+          ${i === 0 ? `
+            <text x="900" y="15" text-anchor="end" class="label-small" style="fill: #1E5A7E;">surface →</text>
+          ` : i === 5 ? `
+            <text x="900" y="15" text-anchor="end" class="label-small" style="fill: #6e2d5e;">→ abstract</text>
+          ` : ''}
+        </g>
+      `).join('')}
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="245" text-anchor="middle">
+        Each layer builds on the previous. Stacking is what enables abstraction.
+      </text>
+    </svg>
+  `,
+
+  'blocks-6': () => `
+    <svg viewBox="0 0 1080 380">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">complete flow inside one transformer block</text>
+
+      <!-- Main input -->
+      <rect x="60" y="50" width="100" height="36" fill="#1E5A7E" rx="3" />
+      <text x="110" y="73" text-anchor="middle" class="label-small" style="font-weight: 500; fill: white;">input x</text>
+
+      <!-- Residual line for attention -->
+      <path d="M 110 86 L 110 200 L 580 200" stroke="#D87545" stroke-width="1.5"
+            stroke-dasharray="4,3" fill="none" />
+
+      <!-- Down arrow -->
+      <line x1="110" y1="86" x2="110" y2="105" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- LayerNorm 1 -->
+      <rect x="60" y="105" width="100" height="32" fill="#cce0e8" stroke="#1E5A7E" stroke-width="1" rx="2" />
+      <text x="110" y="125" text-anchor="middle" class="label-small" style="fill: #1E5A7E;">LayerNorm</text>
+
+      <line x1="110" y1="137" x2="110" y2="156" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- Multi-Head Attention -->
+      <rect x="40" y="156" width="140" height="36" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" rx="3" />
+      <text x="110" y="178" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #5a2410;">Multi-Head Attn</text>
+
+      <line x1="110" y1="192" x2="110" y2="220" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- Add (residual 1) -->
+      <circle cx="580" cy="220" r="14" fill="#D87545" stroke="white" stroke-width="2" />
+      <text x="580" y="225" text-anchor="middle" fill="white" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;">+</text>
+
+      <line x1="110" y1="220" x2="566" y2="220" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- Continuation -->
+      <line x1="580" y1="234" x2="580" y2="255" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- Residual line for FFN -->
+      <path d="M 580 234 L 580 350 L 850 350" stroke="#D87545" stroke-width="1.5"
+            stroke-dasharray="4,3" fill="none" />
+
+      <!-- LayerNorm 2 -->
+      <rect x="530" y="255" width="100" height="32" fill="#cce0e8" stroke="#1E5A7E" stroke-width="1" rx="2" />
+      <text x="580" y="275" text-anchor="middle" class="label-small" style="fill: #1E5A7E;">LayerNorm</text>
+
+      <line x1="580" y1="287" x2="580" y2="306" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- FFN -->
+      <rect x="510" y="306" width="140" height="36" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" rx="3" />
+      <text x="580" y="328" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #5a2410;">Feed-Forward</text>
+
+      <line x1="580" y1="342" x2="580" y2="350" stroke="#6b6b6b" stroke-width="1.5" />
+      <line x1="580" y1="350" x2="836" y2="350" stroke="#6b6b6b" stroke-width="1.5" />
+
+      <!-- Add (residual 2) -->
+      <circle cx="850" cy="350" r="14" fill="#D87545" stroke="white" stroke-width="2" />
+      <text x="850" y="355" text-anchor="middle" fill="white" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;">+</text>
+
+      <!-- Final output arrow -->
+      <line x1="864" y1="350" x2="900" y2="350" stroke="#6b6b6b" stroke-width="1.5" />
+      <polygon points="900,350 894,346 894,354" fill="#6b6b6b" />
+
+      <rect x="900" y="332" width="100" height="36" fill="#1E5A7E" rx="3" />
+      <text x="950" y="355" text-anchor="middle" class="label-small" style="font-weight: 500; fill: white;">output</text>
+
+      <!-- Annotations for residual paths -->
+      <text class="label-small" x="335" y="195" style="font-style: italic; fill: #D87545;">attention residual</text>
+      <text class="label-small" x="700" y="345" style="font-style: italic; fill: #D87545;">FFN residual</text>
+    </svg>
+  `,
+
+  // STEP 5
+  'ln-1': () => `
+    <svg viewBox="0 0 1080 240">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">after 6 blocks, values can drift to large magnitudes</text>
+
+      <g transform="translate(60, 60)">
+        <text class="label-small" x="0" y="-10">a token's vector after 6 blocks (some dims are huge)</text>
+        <rect x="0" y="0" width="900" height="60" fill="white" stroke="#a8385a" stroke-width="1" rx="2" />
+        ${Array.from({length: 60}).map((_, i) => {
+          const v = Math.sin(i * 0.6) * 1.8 + Math.cos(i * 0.3) * 1.5;
+          const h = Math.abs(v) * 14;
+          const y = 30 + (v > 0 ? -h : 0);
+          const color = v > 0 ? '#a8385a' : '#1E5A7E';
+          return `<rect x="${10 + i * 14.5}" y="${y}" width="6" height="${h}" fill="${color}" opacity="0.85" />`;
+        }).join('')}
+        <line x1="0" y1="30" x2="900" y2="30" stroke="#6b6b6b" stroke-width="0.5" stroke-dasharray="2,2" />
+      </g>
+
+      <text class="callout" style="fill: #a8385a;" x="540" y="170" text-anchor="middle">
+        Some values reach ±3, ±4. The output classifier prefers stabler input.
+      </text>
+    </svg>
+  `,
+
+  'ln-2': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">layer norm: 4 small operations, applied to each token's vector</text>
+
+      ${[
+        { num: '1.', op: 'compute mean μ across the 384 values' },
+        { num: '2.', op: 'subtract the mean — values become centered at 0' },
+        { num: '3.', op: 'divide by standard deviation σ — spread becomes 1' },
+        { num: '4.', op: 'apply learned γ (scale) and β (shift) — model can re-stretch if useful' },
+      ].map((step, i) => `
+        <g transform="translate(120, ${60 + i * 50})">
+          <text class="label-large" x="0" y="0" style="font-family: 'Newsreader', serif; font-size: 24px; fill: #D87545;">${step.num}</text>
+          <text class="label-large" x="40" y="0">${step.op}</text>
+        </g>
+      `).join('')}
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="265" text-anchor="middle">
+        That's it. Same shape in, same shape out — just rescaled.
+      </text>
+    </svg>
+  `,
+
+  // STEP 6
+  'proj-1': () => `
+    <svg viewBox="0 0 1080 260">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">linear layer expands 384 → 4,096</text>
+
+      <!-- Input -->
+      <g transform="translate(60, 80)">
+        <rect x="0" y="0" width="200" height="50" fill="#1E5A7E" rx="3" />
+        <text x="100" y="22" text-anchor="middle" class="label-small" style="font-weight: 500; fill: white;">vector</text>
+        <text x="100" y="38" text-anchor="middle" fill="white" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: 0.8;">C = 384</text>
+      </g>
+
+      <!-- Linear layer (matrix shown as block) -->
+      <g transform="translate(330, 60)">
+        <rect x="0" y="0" width="120" height="100" fill="#fae0d0" stroke="#D87545" stroke-width="1.5" rx="3" />
+        <text x="60" y="46" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #5a2410;">linear</text>
+        <text x="60" y="62" text-anchor="middle" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #5a2410;">384 → 4,096</text>
+      </g>
+
+      <!-- Output -->
+      <g transform="translate(520, 60)">
+        <rect x="0" y="0" width="500" height="100" fill="#1E5A7E" rx="3" />
+        <text x="250" y="48" text-anchor="middle" class="label-small" style="font-weight: 500; fill: white;">logits</text>
+        <text x="250" y="68" text-anchor="middle" fill="white" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: 0.8;">V = 4,096 scores</text>
+      </g>
+
+      <!-- Arrows -->
+      <path d="M 265 110 L 325 110" stroke="#6b6b6b" stroke-width="1.5" />
+      <polygon points="325,110 319,106 319,114" fill="#6b6b6b" />
+
+      <path d="M 455 110 L 515 110" stroke="#6b6b6b" stroke-width="1.5" />
+      <polygon points="515,110 509,106 509,114" fill="#6b6b6b" />
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="220" text-anchor="middle">
+        Each output number is a "score" for one possible next token.
+      </text>
+    </svg>
+  `,
+
+  'proj-2': () => `
+    <svg viewBox="0 0 1080 240">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">happens at every position in parallel — 256 predictions per sequence</text>
+
+      <g transform="translate(60, 60)">
+        ${Array.from({length: 8}).map((_, i) => `
+          <g transform="translate(${i * 120}, 0)">
+            <rect x="0" y="0" width="100" height="40" fill="#1E5A7E" rx="3" />
+            <text x="50" y="25" text-anchor="middle" class="label-small" style="fill: white;">pos ${i}</text>
+
+            <line x1="50" y1="40" x2="50" y2="60" stroke="#6b6b6b" stroke-width="1" />
+            <polygon points="50,60 46,56 54,56" fill="#6b6b6b" />
+
+            <rect x="0" y="64" width="100" height="36" fill="#fae0d0" stroke="#D87545" stroke-width="1" rx="2" />
+            <text x="50" y="86" text-anchor="middle" class="label-small" style="fill: #5a2410;">4,096 scores</text>
+          </g>
+        `).join('')}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="180" text-anchor="middle">
+        At every position simultaneously — that's why training is fast.
+      </text>
+    </svg>
+  `,
+
+  // STEP 7
+  'soft-1': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">softmax: exp(score) / sum(exp(scores))</text>
+
+      <!-- Before -->
+      <g transform="translate(60, 80)">
+        <text class="label-small" x="0" y="-10">10 raw scores (logits)</text>
+        ${[2.3, -0.5, 4.1, 1.2, -1.8, 3.5, 0.8, 2.1, -0.3, 1.5].map((v, i) => {
+          const h = Math.abs(v) * 18;
+          const y = v > 0 ? 50 - h : 50;
+          const color = v > 0 ? '#D87545' : '#1E5A7E';
+          return `
+            <rect x="${i * 38}" y="${y}" width="28" height="${h}" fill="${color}" opacity="0.85" rx="1" />
+            <text x="${i * 38 + 14}" y="115" text-anchor="middle" class="label-small">${v.toFixed(1)}</text>
+          `;
+        }).join('')}
+        <line x1="-5" y1="50" x2="385" y2="50" stroke="#6b6b6b" stroke-width="0.5" stroke-dasharray="2,2" />
+      </g>
+
+      <!-- Arrow -->
+      <path d="M 460 130 L 530 130" stroke="#D87545" stroke-width="2" />
+      <polygon points="530,130 524,126 524,134" fill="#D87545" />
+      <text x="495" y="120" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #D87545;">softmax</text>
+
+      <!-- After -->
+      <g transform="translate(580, 80)">
+        <text class="label-small" x="0" y="-10">probabilities (sum = 1.0)</text>
+        ${(() => {
+          const logits = [2.3, -0.5, 4.1, 1.2, -1.8, 3.5, 0.8, 2.1, -0.3, 1.5];
+          const exps = logits.map(v => Math.exp(v));
+          const sum = exps.reduce((a, b) => a + b, 0);
+          const probs = exps.map(e => e / sum);
+          return probs.map((p, i) => {
+            const h = p * 90;
+            return `
+              <rect x="${i * 38}" y="${100 - h}" width="28" height="${h}" fill="#1d9e75" opacity="0.85" rx="1" />
+              <text x="${i * 38 + 14}" y="115" text-anchor="middle" class="label-small">${(p * 100).toFixed(0)}%</text>
+            `;
+          }).join('');
+        })()}
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="220" text-anchor="middle">
+        Notice how the largest score (4.1) gets a much larger fraction than 2.3 — softmax amplifies the leader.
+      </text>
+    </svg>
+  `,
+
+  'soft-2': () => `
+    <svg viewBox="0 0 1080 200">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">same shape, new meaning</text>
+
+      <g transform="translate(140, 60)">
+        <rect x="0" y="0" width="320" height="80" fill="white" stroke="#D87545" stroke-width="1.5" rx="4" />
+        <text x="160" y="36" text-anchor="middle" class="label-large" style="fill: #5a2410;">before softmax</text>
+        <text x="160" y="62" text-anchor="middle" class="label-small">"raw preference scores"</text>
+      </g>
+
+      <text x="540" y="105" text-anchor="middle"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 22px; fill: #6b6b6b;">→</text>
+
+      <g transform="translate(620, 60)">
+        <rect x="0" y="0" width="320" height="80" fill="white" stroke="#1d9e75" stroke-width="1.5" rx="4" />
+        <text x="160" y="36" text-anchor="middle" class="label-large" style="fill: #1d9e75;">after softmax</text>
+        <text x="160" y="62" text-anchor="middle" class="label-small">"probability distribution"</text>
+      </g>
+
+      <text x="540" y="170" text-anchor="middle" class="label-small">shape (B, T, V) — unchanged</text>
+    </svg>
+  `,
+
+  // STEP 8
+  'loss-1': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">cross-entropy: −log(probability assigned to correct token)</text>
+
+      <g transform="translate(140, 60)">
+        <text class="label-small" x="0" y="-10">model's predicted distribution</text>
+        ${(() => {
+          const probs = [0.05, 0.12, 0.28, 0.07, 0.32, 0.04, 0.08, 0.04];
+          return probs.map((p, i) => {
+            const h = p * 120;
+            const isCorrect = i === 4;
+            const color = isCorrect ? '#1d9e75' : '#D87545';
+            return `
+              <rect x="${i * 50}" y="${130 - h}" width="40" height="${h}" fill="${color}" opacity="0.85" rx="1" />
+              <text x="${i * 50 + 20}" y="148" text-anchor="middle" class="label-small">${(p * 100).toFixed(0)}%</text>
+              ${isCorrect ? `<text x="${i * 50 + 20}" y="170" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #1d9e75;">correct</text>` : ''}
+            `;
+          }).join('');
+        })()}
+      </g>
+
+      <g transform="translate(680, 80)">
+        <text class="label-mono" style="fill: #6b6b6b;" x="0" y="0">model assigns 0.32 to correct token</text>
+        <text class="label-mono" style="fill: #6b6b6b;" x="0" y="22">loss = −log(0.32)</text>
+        <text x="0" y="60" style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; fill: #D87545;">= 1.139</text>
+      </g>
+
+      <text class="callout" style="fill: #6b6b6b;" x="540" y="240" text-anchor="middle">
+        Lower loss = model was less surprised by the correct answer.
+      </text>
+    </svg>
+  `,
+
+  'loss-2': () => `
+    <svg viewBox="0 0 1080 280">
+      <text class="label-mono" x="540" y="22" text-anchor="middle">at inference: sample one token from the last-position distribution</text>
+
+      <g transform="translate(140, 60)">
+        <text class="label-small" x="0" y="-10">probabilities at the last position</text>
+        ${(() => {
+          const probs = [0.05, 0.12, 0.28, 0.07, 0.32, 0.04, 0.08, 0.04];
+          return probs.map((p, i) => {
+            const h = p * 120;
+            const isPicked = i === 4;
+            const color = isPicked ? '#1d9e75' : '#D87545';
+            const opacity = isPicked ? 1 : 0.4;
+            return `
+              <rect x="${i * 50}" y="${130 - h}" width="40" height="${h}" fill="${color}" opacity="${opacity}" rx="1" />
+              <text x="${i * 50 + 20}" y="148" text-anchor="middle" class="label-small">${(p * 100).toFixed(0)}%</text>
+              ${isPicked ? `<text x="${i * 50 + 20}" y="170" text-anchor="middle" class="label-small" style="font-weight: 500; fill: #1d9e75;">sampled</text>` : ''}
+            `;
+          }).join('');
+        })()}
+      </g>
+
+      <g transform="translate(680, 80)">
+        <text class="label-mono" style="fill: #6b6b6b;" x="0" y="0">sample respects probabilities:</text>
+        <text class="label-mono" style="fill: #6b6b6b;" x="0" y="22">32% of the time we'd pick this token,</text>
+        <text class="label-mono" style="fill: #6b6b6b;" x="0" y="42">28% of the time the second one, etc.</text>
+        <text x="0" y="80" style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; fill: #1d9e75;">→ append, repeat</text>
+      </g>
+    </svg>
+  `,
+};
+
+/* ================================================================
+   RENDERING
+================================================================ */
+
+let currentStep = 0;
+
+function buildNav() {
+  const nav = document.getElementById('stepNav');
+  nav.innerHTML = STEPS.map((s, i) => `
+    <button class="step-tab" data-idx="${i}">
+      <span class="step-num">${String(i + 1).padStart(2, '0')}</span>
+      <span class="step-name">${s.name}</span>
+    </button>
+  `).join('');
+  nav.querySelectorAll('.step-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentStep = parseInt(btn.dataset.idx);
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+function render() {
+  const step = STEPS[currentStep];
+
+  // Tab active state
+  document.querySelectorAll('.step-tab').forEach((tab, i) => {
+    tab.classList.toggle('active', i === currentStep);
+  });
+
+  // Header
+  document.getElementById('stepHeader').innerHTML = `
+    <div class="step-header-text">
+      <div class="step-meta">Step ${String(currentStep + 1).padStart(2, '0')} of ${String(STEPS.length).padStart(2, '0')}</div>
+      <h2>${step.title}</h2>
+      <div class="subtitle">${step.subtitle}</div>
+    </div>
+    <div class="shape-card">
+      <div class="shape-label">Tensor shape</div>
+      <div class="shape-value">${step.shape}</div>
+    </div>
+  `;
+
+  // Body — multiple panels
+  document.getElementById('stepBody').innerHTML = step.panels.map((p, i) => {
+    if (p.purpose) {
+      return `
+        <div class="panel purpose">
+          <div class="panel-heading">
+            <div class="panel-num">${String(i + 1).padStart(2, '0')}</div>
+            <div class="panel-title">${p.title}</div>
+          </div>
+          <div class="panel-body">
+            <div class="purpose-row coming">
+              <div class="purpose-label">Coming in</div>
+              <div class="purpose-text">${p.coming}</div>
+            </div>
+            <div class="purpose-row outcome">
+              <div class="purpose-label">This step</div>
+              <div class="purpose-text">${p.outcome}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="panel">
+        <div class="panel-heading">
+          <div class="panel-num">${String(i + 1).padStart(2, '0')}</div>
+          <div class="panel-title">${p.title}</div>
+        </div>
+        <div class="panel-body">
+          ${p.body || ''}
+          ${p.viz && VIZ[p.viz] ? `<div class="panel-viz">${VIZ[p.viz]()}</div>` : ''}
+          ${p.callout ? `<div class="panel-callout">${p.callout}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Nav buttons
+  document.getElementById('prevBtn').disabled = currentStep === 0;
+  document.getElementById('nextBtn').disabled = currentStep === STEPS.length - 1;
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (currentStep > 0) { currentStep--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (currentStep < STEPS.length - 1) { currentStep++; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' && currentStep < STEPS.length - 1) { currentStep++; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  if (e.key === 'ArrowLeft' && currentStep > 0) { currentStep--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+
+buildNav();
+render();
+</script>
+</body>
+</html>

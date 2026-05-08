@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Embedding Explorer · Episode 03</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #1E5A7E;
+    --blue-dark: #0F3D5C;
+    --orange: #D87545;
+    --orange-light: #fae0d0;
+    --teal: #1d9e75;
+    --rose: #d4537e;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --faint: #a8a8a8;
+    --line: #e5e5e5;
+    --bg: #faf8f3;
+    --panel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(216, 117, 69, 0.05), transparent 55%),
+      radial-gradient(circle at 88% 100%, rgba(30, 90, 126, 0.04), transparent 60%);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 48px 28px 96px; }
+
+  header {
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 16px;
+  }
+  h1 em { color: var(--orange); font-style: italic; font-weight: 400; }
+
+  .lede {
+    font-family: 'Newsreader', serif;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  /* Word selectors */
+  .word-pickers {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .word-slot {
+    padding: 24px 28px;
+    position: relative;
+  }
+
+  .word-slot.left { background: linear-gradient(135deg, rgba(30, 90, 126, 0.04), transparent); }
+  .word-slot.right { background: linear-gradient(225deg, rgba(216, 117, 69, 0.05), transparent); }
+
+  .word-slot label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .word-slot .selected-word {
+    font-family: 'Newsreader', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  .word-slot .slot-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+    margin-top: -2px;
+  }
+
+  .word-slot.left .slot-color { background: var(--blue); }
+  .word-slot.right .slot-color { background: var(--orange); }
+
+  .vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  /* Word library */
+  .library {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+
+  .library h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    margin: 0 0 14px;
+  }
+
+  .word-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .word-cat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .word-cat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .word-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .word-btn {
+    font-family: 'Newsreader', serif;
+    font-size: 16px;
+    padding: 5px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+  }
+
+  .word-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+
+  .word-btn.in-left {
+    border-color: var(--blue);
+    background: rgba(30, 90, 126, 0.08);
+    color: var(--blue);
+  }
+
+  .word-btn.in-right {
+    border-color: var(--orange);
+    background: rgba(216, 117, 69, 0.08);
+    color: var(--orange);
+  }
+
+  /* Similarity panel */
+  .similarity-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+
+  .similarity-panel h2 {
+    font-family: 'Newsreader', serif;
+    font-size: 28px;
+    font-weight: 500;
+    margin: 0 0 16px;
+    letter-spacing: -0.015em;
+  }
+
+  .sim-bar-container {
+    margin: 24px 0;
+  }
+
+  .sim-bar-track {
+    width: 100%;
+    height: 22px;
+    background: var(--line);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .sim-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .sim-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .sim-score {
+    font-family: 'Newsreader', serif;
+    font-size: 64px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-top: 8px;
+  }
+
+  .sim-verdict {
+    font-family: 'Newsreader', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Vector viz */
+  .viz-section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+
+  .viz-section h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    margin: 0 0 24px;
+  }
+
+  .dim-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Each row: dimension label on the left, then TWO axes side by side — one per word */
+  .dim-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .dim-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    text-align: right;
+    font-weight: 500;
+    cursor: help;
+    line-height: 1.3;
+  }
+
+  .dim-label .axis-poles {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* A bipolar number-line track — appears once per word per dimension */
+  .dim-track {
+    position: relative;
+    height: 30px;
+    background: #f5f3ed;
+    border-radius: 2px;
+    /* Center zero-line */
+    background-image: linear-gradient(
+      to right,
+      transparent calc(50% - 1px),
+      var(--ink) calc(50% - 1px),
+      var(--ink) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+  }
+
+  /* End-of-axis tick labels (−1 and +1), small and unobtrusive */
+  .dim-track::before,
+  .dim-track::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--faint);
+    pointer-events: none;
+  }
+  .dim-track::before {
+    content: '−1';
+    left: 4px;
+  }
+  .dim-track::after {
+    content: '+1';
+    right: 4px;
+  }
+
+  /* The marker bar — anchored at center (zero), grows toward the word's value */
+  .dim-marker {
+    position: absolute;
+    top: 3px;
+    height: 24px;
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+  }
+
+  .dim-track.slotA .dim-marker {
+    background: var(--blue);
+    color: white;
+    justify-content: flex-start;
+  }
+  .dim-track.slotB .dim-marker {
+    background: var(--orange);
+    color: white;
+  }
+
+  .dim-marker .dim-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  /* When negative bar grows leftward, value sits on the right edge of the bar (closer to zero) */
+  .dim-marker.negative .dim-value { margin-left: auto; }
+
+  /* Tiny values: hide the numeric label inside the bar — too narrow */
+  .dim-marker.tiny .dim-value {
+    display: none;
+  }
+
+  /* When the magnitude is essentially zero, show just a small dot at center */
+  .dim-marker.zero {
+    width: 6px !important;
+    height: 6px;
+    top: 12px;
+    left: calc(50% - 3px) !important;
+    right: auto !important;
+    border-radius: 50%;
+  }
+
+  /* Header row showing what slot A and slot B refer to */
+  .dim-legend {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* The legend should align its swatches over the actual columns below */
+  .dim-legend-aligned {
+    display: grid;
+    grid-template-columns: 130px 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .dim-legend-spacer {}
+  .dim-legend-col {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .dim-legend-col .dim-legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .dim-legend-col.slotA .dim-legend-swatch { background: var(--blue); }
+  .dim-legend-col.slotB .dim-legend-swatch { background: var(--orange); }
+  .dim-legend-col .dim-legend-word {
+    color: var(--ink);
+    font-weight: 600;
+    font-family: 'Newsreader', serif;
+    font-size: 14px;
+  }
+
+  .dim-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dim-legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+  }
+  .dim-legend-swatch.slotA { background: var(--blue); }
+  .dim-legend-swatch.slotB { background: var(--orange); }
+
+  .dim-legend-word {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Other panels */
+  .neighbors-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 28px;
+  }
+
+  .neighbors-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 18px;
+  }
+
+  .neighbors-col h4 {
+    font-family: 'Newsreader', serif;
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+
+  .neighbors-col h4 .word-tag {
+    font-size: 14px;
+    padding: 3px 9px;
+    border-radius: 3px;
+    margin-left: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+  }
+
+  .neighbors-col.left .word-tag { background: rgba(30, 90, 126, 0.12); color: var(--blue); }
+  .neighbors-col.right .word-tag { background: rgba(216, 117, 69, 0.12); color: var(--orange); }
+
+  .neighbor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .neighbor-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+
+  .neighbor-item:last-child { border-bottom: none; }
+
+  .neighbor-word {
+    flex: 0 0 90px;
+    font-family: 'Newsreader', serif;
+    font-size: 16px;
+  }
+
+  .neighbor-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--line);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .neighbor-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+  }
+
+  .neighbors-col.left .neighbor-bar-fill { background: var(--blue); }
+  .neighbors-col.right .neighbor-bar-fill { background: var(--orange); }
+
+  .neighbor-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* Footer note */
+  .footer-note {
+    margin-top: 36px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+  .footer-note strong { color: var(--ink); }
+
+  @media (max-width: 760px) {
+    .word-pickers { grid-template-columns: 1fr; }
+    .vs-divider { padding: 10px 0; border: none; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .neighbors-grid { grid-template-columns: 1fr; }
+    .container { padding: 32px 16px 60px; }
+    .word-cat-label { width: 70px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="kicker">Episode 03 · Visualization 01</div>
+    <h1>What words look like as <em>vectors.</em></h1>
+    <p class="lede">
+      Pick any two words. Each one is a list of numbers — its "meaning" spread across many
+      dimensions. Similar words have similar lists. This is how a transformer sees vocabulary.
+    </p>
+  </header>
+
+  <div class="word-pickers">
+    <div class="word-slot left">
+      <label><span class="slot-color"></span>Word A</label>
+      <div class="selected-word" id="wordA">cat</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="word-slot right">
+      <label><span class="slot-color"></span>Word B</label>
+      <div class="selected-word" id="wordB">dog</div>
+    </div>
+  </div>
+
+  <div class="library">
+    <h3>Pick words to compare — click any word, then click another</h3>
+    <div class="word-categories" id="wordCategories"></div>
+  </div>
+
+  <div class="similarity-panel">
+    <h2>Similarity</h2>
+    <div class="sim-score" id="simScore">—</div>
+    <div class="sim-verdict" id="simVerdict">Pick two words above</div>
+
+    <div class="sim-bar-container">
+      <div class="sim-bar-track">
+        <div class="sim-bar-fill" id="simBar" style="width: 0%; background: var(--orange);"></div>
+      </div>
+      <div class="sim-bar-labels">
+        <span>0.00 — totally different</span>
+        <span>1.00 — identical meaning</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="viz-section">
+    <h3>Each word gets its own axis from −1 to +1 — see where each one lands</h3>
+    <div class="dim-legend-aligned">
+      <div class="dim-legend-spacer"></div>
+      <div class="dim-legend-col slotA">
+        <div class="dim-legend-swatch"></div>
+        <span class="dim-legend-word" id="legendA">—</span>
+      </div>
+      <div class="dim-legend-col slotB">
+        <div class="dim-legend-swatch"></div>
+        <span class="dim-legend-word" id="legendB">—</span>
+      </div>
+    </div>
+    <div class="dim-rows" id="dimRows"></div>
+  </div>
+
+  <div class="neighbors-panel">
+    <h3 style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 0;">Closest neighbors — words with the most similar vectors</h3>
+    <div class="neighbors-grid" id="neighborsGrid"></div>
+  </div>
+
+  <div class="footer-note">
+    <strong>About these vectors:</strong> the embeddings shown here are hand-designed for
+    teaching purposes — each word has a 12-dimensional vector with axes I labeled by
+    hand (animal, action, emotion, etc.). In a real trained model, the dimensions are
+    not labeled and don't correspond cleanly to human concepts. The model invents
+    whatever 384 dimensions are useful for predicting the next token. Some end up
+    roughly aligned with concepts we recognize; most don't. The principle is the same:
+    <strong>similar words end up with similar vectors</strong> because they appear in
+    similar contexts during training.
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   Hand-designed embeddings — 12 dimensions per word.
+   Each dimension is roughly interpretable.
+   Values are roughly in [-1, 1].
+============================================================ */
+
+const DIMENSIONS = [
+  { key: 'animal',   label: 'animal-ness',  negPole: 'not a creature', posPole: 'living creature',   desc: 'is this a living creature?' },
+  { key: 'pet',      label: 'pet-ness',     negPole: 'wild / not pet', posPole: 'common pet',        desc: 'pet vs wild animal' },
+  { key: 'size',     label: 'size',         negPole: 'tiny',           posPole: 'huge',              desc: 'small vs large' },
+  { key: 'wild',     label: 'wildness',     negPole: 'tame',           posPole: 'wild',              desc: 'tame vs wild' },
+  { key: 'action',   label: 'action-ness',  negPole: 'not an action',  posPole: 'verb / action',     desc: 'is this a verb?' },
+  { key: 'motion',   label: 'motion',       negPole: 'still',          posPole: 'moving',            desc: 'involves motion?' },
+  { key: 'emotion',  label: 'emotion',      negPole: 'not a feeling',  posPole: 'feeling',           desc: 'is this an emotion?' },
+  { key: 'positive', label: 'positivity',   negPole: 'negative',       posPole: 'positive',          desc: 'sad vs happy' },
+  { key: 'human',    label: 'human-ness',   negPole: 'not a person',   posPole: 'person',            desc: 'about a person?' },
+  { key: 'object',   label: 'object-ness',  negPole: 'not physical',   posPole: 'physical object',   desc: 'is this a thing?' },
+  { key: 'natural',  label: 'natural',      negPole: 'man-made',       posPole: 'natural',           desc: 'natural vs man-made' },
+  { key: 'abstract', label: 'abstractness', negPole: 'concrete',       posPole: 'abstract',          desc: 'concrete vs abstract' },
+];
+
+// Word: [animal, pet, size, wild, action, motion, emotion, positive, human, object, natural, abstract]
+const WORDS = {
+  // Animals
+  cat:    [0.95, 0.85, -0.4, -0.5, 0,    0.2,  0,    0.3,  0,    0.7,  0.7,  -0.8],
+  dog:    [0.95, 0.90, 0.0,  -0.6, 0,    0.3,  0.1,  0.5,  0,    0.7,  0.7,  -0.8],
+  kitten: [0.90, 0.85, -0.7, -0.5, 0,    0.3,  0.1,  0.6,  0,    0.7,  0.7,  -0.7],
+  puppy:  [0.90, 0.85, -0.6, -0.5, 0,    0.3,  0.1,  0.7,  0,    0.7,  0.7,  -0.7],
+  tiger:  [0.95, -0.7, 0.7,  0.95, 0,    0.3,  0,    -0.2, 0,    0.7,  0.85, -0.8],
+  wolf:   [0.95, -0.5, 0.5,  0.90, 0,    0.4,  0,    -0.3, 0,    0.7,  0.85, -0.8],
+  bunny:  [0.90, 0.7,  -0.6, -0.2, 0,    0.4,  0.1,  0.6,  0,    0.7,  0.8,  -0.7],
+  bird:   [0.90, 0.3,  -0.4, 0.3,  0,    0.5,  0,    0.4,  0,    0.7,  0.85, -0.7],
+
+  // People
+  girl:   [0.5,  0,    -0.4, -0.3, 0,    0.1,  0,    0.4,  0.95, 0.6,  0.4,  -0.6],
+  boy:    [0.5,  0,    -0.3, -0.3, 0,    0.1,  0,    0.4,  0.95, 0.6,  0.4,  -0.6],
+  woman:  [0.5,  0,    0.1,  -0.3, 0,    0.05, 0,    0.4,  0.95, 0.6,  0.4,  -0.6],
+  man:    [0.5,  0,    0.2,  -0.3, 0,    0.05, 0,    0.4,  0.95, 0.6,  0.4,  -0.6],
+  mom:    [0.5,  0,    0.2,  -0.4, 0,    0.05, 0.1,  0.7,  0.95, 0.6,  0.4,  -0.5],
+  dad:    [0.5,  0,    0.3,  -0.4, 0,    0.05, 0.1,  0.7,  0.95, 0.6,  0.4,  -0.5],
+
+  // Verbs / actions
+  run:    [0,    0,    0,    0,    0.95, 0.95, 0,    0.3,  0,    -0.7, 0,    0.3],
+  jump:   [0,    0,    0,    0,    0.95, 0.95, 0.1,  0.4,  0,    -0.7, 0,    0.3],
+  walk:   [0,    0,    0,    0,    0.95, 0.85, 0,    0.3,  0,    -0.7, 0,    0.3],
+  sit:    [0,    0,    0,    0,    0.95, -0.6, 0,    0.1,  0,    -0.7, 0,    0.3],
+  sleep:  [0,    0,    0,    0,    0.85, -0.8, 0.1,  0.3,  0,    -0.7, 0,    0.3],
+  play:   [0,    0,    0,    0,    0.95, 0.7,  0.5,  0.8,  0,    -0.7, 0,    0.3],
+
+  // Emotions
+  happy:  [0,    0,    0,    0,    0,    0,    0.95, 0.95, 0.2,  -0.9, 0,    0.85],
+  sad:    [0,    0,    0,    0,    0,    0,    0.95, -0.85,0.2,  -0.9, 0,    0.85],
+  glad:   [0,    0,    0,    0,    0,    0,    0.95, 0.90, 0.2,  -0.9, 0,    0.85],
+  angry:  [0,    0,    0,    0,    0,    0,    0.95, -0.80,0.2,  -0.9, 0,    0.85],
+  joyful: [0,    0,    0,    0,    0,    0,    0.95, 0.95, 0.2,  -0.9, 0,    0.85],
+  scared: [0,    0,    0,    0,    0,    0,    0.95, -0.7, 0.2,  -0.9, 0,    0.85],
+
+  // Objects
+  ball:    [0,   0,    -0.5, 0,    0,    0,    0,    0.4,  0,    0.95, -0.3, -0.9],
+  toy:     [0,   0,    -0.5, 0,    0,    0,    0,    0.7,  0,    0.95, -0.6, -0.85],
+  book:    [0,   0,    -0.4, 0,    0,    0,    0,    0.4,  0,    0.95, -0.7, -0.7],
+  needle:  [0,   0,    -0.85,0,    0,    0,    0,    -0.1, 0,    0.95, -0.5, -0.9],
+  garden:  [0,   0,    0.4,  0,    0,    0,    0,    0.5,  0,    0.85, 0.85, -0.5],
+  tree:    [0,   0,    0.7,  0,    0,    0,    0,    0.5,  0,    0.95, 0.95, -0.85],
+};
+
+const CATEGORIES = [
+  { name: 'Animals',  words: ['cat', 'dog', 'kitten', 'puppy', 'tiger', 'wolf', 'bunny', 'bird'] },
+  { name: 'People',   words: ['girl', 'boy', 'woman', 'man', 'mom', 'dad'] },
+  { name: 'Actions',  words: ['run', 'jump', 'walk', 'sit', 'sleep', 'play'] },
+  { name: 'Feelings', words: ['happy', 'sad', 'glad', 'angry', 'joyful', 'scared'] },
+  { name: 'Things',   words: ['ball', 'toy', 'book', 'needle', 'garden', 'tree'] },
+];
+
+let leftWord = 'cat';
+let rightWord = 'dog';
+let nextSlot = 'left'; // alternate between left and right when clicking
+
+/* ============================================================
+   Math helpers
+============================================================ */
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+function magnitude(v) {
+  return Math.sqrt(dot(v, v));
+}
+function cosineSimilarity(a, b) {
+  const ma = magnitude(a);
+  const mb = magnitude(b);
+  if (ma === 0 || mb === 0) return 0;
+  return dot(a, b) / (ma * mb);
+}
+
+/* ============================================================
+   Build word library
+============================================================ */
+function buildLibrary() {
+  const container = document.getElementById('wordCategories');
+  container.innerHTML = CATEGORIES.map(cat => `
+    <div class="word-cat-row">
+      <div class="word-cat-label">${cat.name}</div>
+      <div class="word-buttons">
+        ${cat.words.map(w => `<button class="word-btn" data-word="${w}">${w}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.word-btn').forEach(btn => {
+    btn.addEventListener('click', () => pickWord(btn.dataset.word));
+  });
+}
+
+function pickWord(w) {
+  if (nextSlot === 'left') {
+    leftWord = w;
+    nextSlot = 'right';
+  } else {
+    rightWord = w;
+    nextSlot = 'left';
+  }
+  render();
+}
+
+/* ============================================================
+   Render
+============================================================ */
+function render() {
+  document.getElementById('wordA').textContent = leftWord;
+  document.getElementById('wordB').textContent = rightWord;
+
+  // Highlight active words in library
+  document.querySelectorAll('.word-btn').forEach(btn => {
+    btn.classList.remove('in-left', 'in-right');
+    if (btn.dataset.word === leftWord) btn.classList.add('in-left');
+    if (btn.dataset.word === rightWord) btn.classList.add('in-right');
+  });
+
+  const va = WORDS[leftWord];
+  const vb = WORDS[rightWord];
+  if (!va || !vb) return;
+
+  // Similarity
+  const sim = cosineSimilarity(va, vb);
+  const simPct = Math.max(0, sim) * 100;
+
+  document.getElementById('simScore').textContent = sim.toFixed(3);
+  document.getElementById('simBar').style.width = simPct + '%';
+
+  // Color the bar based on similarity
+  let barColor;
+  if (sim > 0.7) barColor = 'var(--teal)';
+  else if (sim > 0.3) barColor = 'var(--orange)';
+  else barColor = 'var(--rose)';
+  document.getElementById('simBar').style.background = barColor;
+
+  // Verdict
+  let verdict;
+  if (leftWord === rightWord) verdict = 'You picked the same word — naturally identical.';
+  else if (sim > 0.85) verdict = 'These words are nearly identical in meaning — strong synonyms.';
+  else if (sim > 0.6) verdict = 'Closely related. They share most of their semantic dimensions.';
+  else if (sim > 0.3) verdict = 'Moderately related. Some shared concepts, but distinct meanings.';
+  else if (sim > 0) verdict = 'Mostly unrelated. They share only weak common features.';
+  else verdict = 'Effectively orthogonal — these words occupy different parts of meaning-space.';
+  document.getElementById('simVerdict').textContent = verdict;
+
+  // Render dimension bars
+  renderDimensions(va, vb);
+
+  // Update legend
+  document.getElementById('legendA').textContent = leftWord;
+  document.getElementById('legendB').textContent = rightWord;
+
+  // Render neighbors
+  renderNeighbors();
+}
+
+function renderDimensions(va, vb) {
+  const container = document.getElementById('dimRows');
+  container.innerHTML = DIMENSIONS.map((dim, i) => {
+    const a = va[i];
+    const b = vb[i];
+
+    // For each axis: 50% = zero, 0% = -1, 100% = +1.
+    // Marker is a horizontal bar from the center toward the value, with width proportional to |value|.
+    const trackHalfPct = 47; // leaves a couple of % at each end as padding
+
+    function markerHTML(val, slot) {
+      const mag = Math.abs(val);
+      const widthPct = mag * trackHalfPct;
+      const tinyClass = mag < 0.08 ? 'tiny' : '';
+
+      // Essentially zero: render as a small dot at the center
+      if (mag < 0.02) {
+        return `<div class="dim-marker zero ${slot}"></div>`;
+      }
+
+      const sign = val < 0 ? '−' : '+';
+      const valueText = `${sign}${mag.toFixed(2)}`;
+      const negativeClass = val < 0 ? 'negative' : '';
+
+      let style;
+      if (val >= 0) {
+        // Bar grows rightward from center
+        style = `left: 50%; width: ${widthPct}%;`;
+      } else {
+        // Bar grows leftward from center
+        style = `right: 50%; width: ${widthPct}%;`;
+      }
+
+      return `
+        <div class="dim-marker ${negativeClass} ${tinyClass}" style="${style}">
+          <span class="dim-value">${valueText}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="dim-row" title="${escapeHtml(dim.desc)}">
+        <div class="dim-label">
+          ${dim.label}
+          <span class="axis-poles">${dim.negPole} ↔ ${dim.posPole}</span>
+        </div>
+        <div class="dim-track slotA">
+          ${markerHTML(a, 'slotA')}
+        </div>
+        <div class="dim-track slotB">
+          ${markerHTML(b, 'slotB')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderNeighbors() {
+  const grid = document.getElementById('neighborsGrid');
+  grid.innerHTML = `
+    <div class="neighbors-col left">
+      <h4>${leftWord} <span class="word-tag">word A</span></h4>
+      <div class="neighbor-list">${getNeighbors(leftWord, 'left')}</div>
+    </div>
+    <div class="neighbors-col right">
+      <h4>${rightWord} <span class="word-tag">word B</span></h4>
+      <div class="neighbor-list">${getNeighbors(rightWord, 'right')}</div>
+    </div>
+  `;
+}
+
+function getNeighbors(word, side) {
+  const v = WORDS[word];
+  if (!v) return '';
+  const allWords = Object.keys(WORDS).filter(w => w !== word);
+  const sims = allWords.map(w => ({ w, sim: cosineSimilarity(v, WORDS[w]) }));
+  sims.sort((a, b) => b.sim - a.sim);
+  const top = sims.slice(0, 6);
+  return top.map(item => `
+    <div class="neighbor-item">
+      <span class="neighbor-word">${item.w}</span>
+      <div class="neighbor-bar">
+        <div class="neighbor-bar-fill" style="width: ${Math.max(0, item.sim) * 100}%;"></div>
+      </div>
+      <span class="neighbor-score">${item.sim.toFixed(2)}</span>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   Init
+============================================================ */
+buildLibrary();
+render();
+</script>
+</body>
+</html>

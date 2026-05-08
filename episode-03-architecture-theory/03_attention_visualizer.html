@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Attention Visualizer · Episode 03</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #1E5A7E;
+    --blue-dark: #0F3D5C;
+    --orange: #D87545;
+    --orange-light: #fae0d0;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --faint: #a8a8a8;
+    --line: #e5e5e5;
+    --bg: #faf8f3;
+    --panel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(216, 117, 69, 0.05), transparent 55%),
+      radial-gradient(circle at 88% 100%, rgba(30, 90, 126, 0.04), transparent 60%);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 48px 28px 96px; }
+
+  header {
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 16px;
+  }
+  h1 em { color: var(--orange); font-style: italic; font-weight: 400; }
+
+  .lede {
+    font-family: 'Newsreader', serif;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  .input-area {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .input-area label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .input-area input {
+    flex: 1;
+    min-width: 240px;
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .input-area input:focus {
+    outline: none;
+    border-color: var(--orange);
+  }
+
+  .examples {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .ex-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .ex-chip:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+
+  .control-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .head-selector {
+    display: flex;
+    gap: 4px;
+    background: var(--panel);
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 100px;
+  }
+
+  .head-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 7px 14px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 100px;
+    transition: all 0.15s;
+  }
+
+  .head-btn.active {
+    background: var(--orange);
+    color: white;
+  }
+
+  .head-btn:not(.active):hover {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .info-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    background: var(--blue);
+    color: white;
+    border-radius: 100px;
+    margin-left: auto;
+  }
+
+  .visualization {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    min-height: 360px;
+  }
+
+  .head-description {
+    font-family: 'Newsreader', serif;
+    font-size: 17px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.5;
+    max-width: 64ch;
+    font-style: italic;
+  }
+  .head-description strong {
+    color: var(--ink);
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  /* SVG visualization styles */
+  svg.attn-svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .token-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    fill: var(--ink);
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .token-bg {
+    fill: white;
+    stroke: var(--line);
+    stroke-width: 1;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .token-bg:hover {
+    stroke: var(--orange);
+    stroke-width: 1.5;
+  }
+
+  .token-bg.selected {
+    fill: var(--orange);
+    stroke: var(--orange);
+  }
+
+  .token-bg.selected + .token-label,
+  g.selected .token-label {
+    fill: white;
+  }
+
+  .token-bg.attended {
+    stroke: var(--blue);
+    stroke-width: 1.5;
+  }
+
+  .attn-line {
+    stroke: var(--orange);
+    fill: none;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  /* Heatmap matrix */
+  .heatmap-section {
+    margin-top: 36px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  .heatmap-section h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 18px;
+    font-weight: 500;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .heatmap-cell {
+    background: white;
+    padding: 7px 4px;
+    text-align: center;
+    color: var(--muted);
+    transition: background 0.15s;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .heatmap-cell.header {
+    background: #f5f3ed;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .heatmap-cell.diag-header {
+    background: #ebe7da;
+  }
+
+  .heatmap-cell.masked {
+    background: repeating-linear-gradient(
+      45deg,
+      #f5f3ed,
+      #f5f3ed 4px,
+      #ebe7da 4px,
+      #ebe7da 8px
+    );
+    color: transparent;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .gradient-bar {
+    flex: 0 0 200px;
+    height: 14px;
+    background: linear-gradient(to right, white, var(--orange));
+    border: 1px solid var(--line);
+    border-radius: 2px;
+  }
+
+  /* Explanation panels */
+  .explain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-top: 32px;
+  }
+
+  .explain-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px;
+  }
+
+  .explain-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 10px;
+  }
+
+  .explain-card h4 {
+    font-family: 'Newsreader', serif;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin: 0 0 12px;
+  }
+
+  .explain-card p {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .footer-note {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+
+  .footer-note strong { color: var(--ink); }
+
+  @media (max-width: 760px) {
+    .explain-grid { grid-template-columns: 1fr; }
+    .container { padding: 32px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="kicker">Episode 03 · Visualization 02</div>
+    <h1>Attention, <em>visible.</em></h1>
+    <p class="lede">
+      Type a sentence. Pick a head. Click any token. Watch what it pays attention to —
+      the same operation that happens hundreds of millions of times when a transformer
+      reads a single page of text.
+    </p>
+  </header>
+
+  <div class="input-area">
+    <label for="sentence">Sentence</label>
+    <input type="text" id="sentence" value="The cat sat on the mat because it was tired" />
+  </div>
+
+  <div class="examples">
+    <button class="ex-chip" data-text="The cat sat on the mat because it was tired">The cat sat on the mat because it was tired</button>
+    <button class="ex-chip" data-text="Lily found a needle in her room">Lily found a needle in her room</button>
+    <button class="ex-chip" data-text="One day a little girl ran to her mom">One day a little girl ran to her mom</button>
+    <button class="ex-chip" data-text="The dragon was very angry but Tim was brave">The dragon was very angry but Tim was brave</button>
+  </div>
+
+  <div class="control-bar" style="margin-top: 28px;">
+    <div class="head-selector" id="headSelector"></div>
+    <div class="info-pill" id="infoPill">click a token to see its attention</div>
+  </div>
+
+  <div class="visualization">
+    <div class="head-description" id="headDesc"></div>
+    <svg class="attn-svg" id="attnSvg" viewBox="0 0 1080 220" preserveAspectRatio="xMidYMid meet"></svg>
+
+    <div class="heatmap-section">
+      <h3>Full attention matrix — every token to every other token</h3>
+      <div class="heatmap-grid" id="heatmap"></div>
+      <div class="legend">
+        <span>0%</span>
+        <div class="gradient-bar"></div>
+        <span>100% attention weight</span>
+        <span style="margin-left: 24px;">Striped cells = causally masked (future tokens)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="explain-grid">
+    <div class="explain-card">
+      <div class="label">Step 01</div>
+      <h4>Three views per token</h4>
+      <p>Each token produces a Query ("what am I looking for?"), a Key ("what do I offer?"), and a Value ("what would I share?"). All three are learned during training.</p>
+    </div>
+    <div class="explain-card">
+      <div class="label">Step 02</div>
+      <h4>Score against every prior token</h4>
+      <p>Each Query is dot-producted with every earlier Key. The result is a similarity score — how relevant each prior token is to the current one's question.</p>
+    </div>
+    <div class="explain-card">
+      <div class="label">Step 03</div>
+      <h4>Softmax + weighted blend</h4>
+      <p>Scores become probabilities (summing to 1). The token's new representation is a weighted mix of all prior Values, with relevant tokens contributing more.</p>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <strong>About these patterns:</strong> the six heads shown here aren't from a trained model —
+    they're hand-crafted to mimic patterns found in real, trained transformers. After training,
+    GPT-2's heads have been studied extensively: some attend to the previous token, some track
+    subject-verb agreement, some focus on punctuation, and so on. The patterns here are
+    illustrative; in your own trained 12 M model, the specializations will look similar but
+    not identical.
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   Hand-crafted attention head patterns
+   Each head returns attention weights for every (query, key) pair.
+   Functions take (queryIdx, keyIdx, tokens) and return [0,1] weight.
+   We then renormalize each row so weights sum to 1 (softmax-like).
+============================================================ */
+
+const PUNCTUATION = new Set(['.', ',', '!', '?', ';', ':']);
+const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'was', 'are', 'were', 'be', 'been', 'of', 'to', 'in', 'on', 'at', 'and', 'but', 'or']);
+const PRONOUNS = new Set(['it', 'he', 'she', 'they', 'him', 'her', 'them', 'his', 'hers', 'their']);
+
+const HEADS = [
+  {
+    name: 'Head 1',
+    spec: 'previous token',
+    description: 'This head focuses almost entirely on the <strong>immediately previous token</strong>. Useful for capturing local bigram patterns and tight syntactic dependencies. Most trained transformers have at least one head that does this.',
+    score: (q, k, toks) => {
+      if (k === q - 1) return 5;
+      if (k === q) return 0.3;
+      return 0.05;
+    }
+  },
+  {
+    name: 'Head 2',
+    spec: 'self-attention only',
+    description: 'This head looks mostly at <strong>the current token itself</strong>, with light attention spread to recent context. Useful when the model needs to preserve a token\'s identity through the layer rather than blending it with others.',
+    score: (q, k, toks) => {
+      if (k === q) return 4;
+      if (q - k <= 3 && k <= q) return 0.2;
+      return 0.05;
+    }
+  },
+  {
+    name: 'Head 3',
+    spec: 'punctuation tracker',
+    description: 'This head attends strongly to the <strong>most recent punctuation mark</strong>. Punctuation acts as a strong signal in transformers — heads like this help tokens "know" where they are in a clause.',
+    score: (q, k, toks) => {
+      if (k > q) return 0;
+      const tok = toks[k].toLowerCase();
+      if (PUNCTUATION.has(tok)) return 4;
+      if (k === q) return 0.5;
+      return 0.1;
+    }
+  },
+  {
+    name: 'Head 4',
+    spec: 'pronoun resolution',
+    description: 'This head, when the current token is a <strong>pronoun</strong>, looks back to find candidate referents — usually nouns mentioned earlier. When the current token is not a pronoun, it falls back to a uniform pattern.',
+    score: (q, k, toks) => {
+      if (k > q) return 0;
+      const qTok = toks[q].toLowerCase();
+      const kTok = toks[k].toLowerCase();
+      if (PRONOUNS.has(qTok)) {
+        // Look for non-pronoun, non-stopword nouns earlier
+        if (k < q && !PRONOUNS.has(kTok) && !STOPWORDS.has(kTok) && !PUNCTUATION.has(kTok)) {
+          return 3 - (q - k) * 0.1; // prefer closer matches but not strictly
+        }
+        return 0.05;
+      }
+      // Fallback for non-pronoun queries: roughly uniform
+      return 0.5;
+    }
+  },
+  {
+    name: 'Head 5',
+    spec: 'content words',
+    description: 'This head ignores function words (<em>the, a, of, was</em>) and focuses on <strong>content words</strong> — nouns and verbs that carry meaning. Common in middle layers where semantic understanding is being built.',
+    score: (q, k, toks) => {
+      if (k > q) return 0;
+      const tok = toks[k].toLowerCase();
+      if (STOPWORDS.has(tok) || PUNCTUATION.has(tok)) return 0.05;
+      return 1.5;
+    }
+  },
+  {
+    name: 'Head 6',
+    spec: 'sentence start',
+    description: 'This head attends back to the <strong>beginning of the sequence</strong>. Acts as a "reset signal" or anchor — many real transformers have a head that consistently attends to the first token, sometimes called the "BOS sink".',
+    score: (q, k, toks) => {
+      if (k > q) return 0;
+      if (k === 0) return 4;
+      if (k === q) return 0.5;
+      return 0.1;
+    }
+  }
+];
+
+let currentHeadIdx = 0;
+let selectedToken = null;
+let tokens = [];
+
+/* ============================================================
+   Tokenization (simple word + punctuation split)
+============================================================ */
+function tokenize(sentence) {
+  // Split on whitespace, then peel punctuation off the ends of tokens
+  const words = sentence.trim().split(/\s+/);
+  const out = [];
+  for (const w of words) {
+    if (!w) continue;
+    let core = w;
+    let trailing = '';
+    while (core.length > 1 && PUNCTUATION.has(core[core.length - 1])) {
+      trailing = core[core.length - 1] + trailing;
+      core = core.slice(0, -1);
+    }
+    if (core) out.push(core);
+    for (const c of trailing) out.push(c);
+  }
+  return out;
+}
+
+/* ============================================================
+   Compute attention matrix for current head (with causal mask + softmax)
+============================================================ */
+function computeAttention() {
+  const head = HEADS[currentHeadIdx];
+  const n = tokens.length;
+  const matrix = [];
+  for (let q = 0; q < n; q++) {
+    const row = [];
+    let total = 0;
+    for (let k = 0; k < n; k++) {
+      let v = 0;
+      if (k <= q) {
+        v = Math.exp(head.score(q, k, tokens));
+      }
+      row.push(v);
+      total += v;
+    }
+    // Normalize (this is the softmax)
+    for (let k = 0; k < n; k++) {
+      row[k] = total > 0 ? row[k] / total : 0;
+    }
+    matrix.push(row);
+  }
+  return matrix;
+}
+
+/* ============================================================
+   Render
+============================================================ */
+const svg = document.getElementById('attnSvg');
+const heatmap = document.getElementById('heatmap');
+const headDesc = document.getElementById('headDesc');
+const infoPill = document.getElementById('infoPill');
+
+function render() {
+  if (tokens.length === 0) return;
+  const matrix = computeAttention();
+  renderTokenLine(matrix);
+  renderHeatmap(matrix);
+  headDesc.innerHTML = HEADS[currentHeadIdx].description;
+}
+
+function renderTokenLine(matrix) {
+  const n = tokens.length;
+  const W = 1080;
+  const H = 220;
+  const padding = 30;
+
+  // Compute positions
+  const totalWidth = W - padding * 2;
+  const positions = [];
+  let x = padding;
+
+  // Measure each token (rough estimate)
+  const minGap = 80;
+  const tokenWidths = tokens.map(t => Math.max(40, t.length * 9 + 16));
+  const totalNeeded = tokenWidths.reduce((a, b) => a + b, 0);
+  const gap = Math.max(8, (totalWidth - totalNeeded) / Math.max(1, n - 1));
+
+  for (let i = 0; i < n; i++) {
+    positions.push({ x: x + tokenWidths[i] / 2, w: tokenWidths[i] });
+    x += tokenWidths[i] + gap;
+  }
+
+  // If still overflowing, scale down
+  const lastX = positions[n - 1].x + positions[n - 1].w / 2;
+  const scale = lastX > W - padding ? (W - padding * 2) / (lastX - padding) : 1;
+  if (scale < 1) {
+    for (let i = 0; i < n; i++) {
+      positions[i].x = padding + (positions[i].x - padding) * scale;
+      positions[i].w *= scale;
+    }
+  }
+
+  const tokenY = H - 40;
+  const lineSrcY = tokenY - 10;
+  const lineDstY = tokenY - 10;
+  const arcPeak = 30;
+
+  let svgContent = '';
+
+  // Draw attention lines (only if a token is selected)
+  if (selectedToken !== null) {
+    const row = matrix[selectedToken];
+    const srcX = positions[selectedToken].x;
+
+    for (let k = 0; k < n; k++) {
+      if (k > selectedToken) continue; // causal
+      const weight = row[k];
+      if (weight < 0.005) continue;
+
+      const dstX = positions[k].x;
+      const opacity = Math.min(1, weight * 1.2 + 0.15);
+      const strokeWidth = Math.max(1, weight * 8);
+
+      // Curved arc connecting them
+      const midX = (srcX + dstX) / 2;
+      const arcHeight = Math.min(80, 30 + Math.abs(srcX - dstX) * 0.15);
+      const path = `M ${srcX} ${lineSrcY} Q ${midX} ${lineSrcY - arcHeight} ${dstX} ${lineDstY}`;
+
+      svgContent += `<path d="${path}" class="attn-line" stroke-width="${strokeWidth.toFixed(2)}" opacity="${opacity.toFixed(3)}" />`;
+    }
+  }
+
+  // Draw tokens
+  for (let i = 0; i < n; i++) {
+    const p = positions[i];
+    const w = p.w;
+    const isSelected = i === selectedToken;
+    const isAttended = selectedToken !== null && i < selectedToken && matrix[selectedToken][i] > 0.05;
+
+    let cls = 'token-bg';
+    if (isSelected) cls += ' selected';
+    else if (isAttended) cls += ' attended';
+
+    svgContent += `
+      <g data-token-idx="${i}" style="cursor: pointer;">
+        <rect class="${cls}" x="${p.x - w / 2}" y="${tokenY - 14}" width="${w}" height="28" rx="4" />
+        <text class="token-label" x="${p.x}" y="${tokenY + 4}" text-anchor="middle" fill="${isSelected ? 'white' : 'var(--ink)'}">${escapeXml(tokens[i])}</text>
+      </g>
+    `;
+  }
+
+  svg.innerHTML = svgContent;
+
+  // Wire up click handlers
+  svg.querySelectorAll('g[data-token-idx]').forEach(g => {
+    g.addEventListener('click', () => {
+      const idx = parseInt(g.dataset.tokenIdx);
+      selectedToken = (selectedToken === idx) ? null : idx;
+      render();
+      updateInfoPill();
+    });
+  });
+
+  updateInfoPill();
+}
+
+function updateInfoPill() {
+  if (selectedToken === null) {
+    infoPill.textContent = 'click a token to see its attention';
+  } else {
+    infoPill.textContent = `attending from "${tokens[selectedToken]}" (position ${selectedToken})`;
+  }
+}
+
+function renderHeatmap(matrix) {
+  const n = tokens.length;
+  // Grid columns: 1 for row label + n columns
+  heatmap.style.gridTemplateColumns = `minmax(60px, auto) repeat(${n}, minmax(40px, 1fr))`;
+
+  let html = '';
+
+  // Header row
+  html += `<div class="heatmap-cell diag-header" title="row = query (this token), col = key (token attended to)">↓Q · K→</div>`;
+  for (let k = 0; k < n; k++) {
+    html += `<div class="heatmap-cell header" title="${escapeXml(tokens[k])}">${truncate(tokens[k], 6)}</div>`;
+  }
+
+  // Data rows
+  for (let q = 0; q < n; q++) {
+    html += `<div class="heatmap-cell header" title="${escapeXml(tokens[q])}">${truncate(tokens[q], 6)}</div>`;
+    for (let k = 0; k < n; k++) {
+      if (k > q) {
+        html += `<div class="heatmap-cell masked" title="masked (future)"></div>`;
+      } else {
+        const w = matrix[q][k];
+        const bg = blendColor(w);
+        const txtColor = w > 0.5 ? 'white' : 'var(--muted)';
+        html += `<div class="heatmap-cell" style="background: ${bg}; color: ${txtColor};" title="${tokens[q]} → ${tokens[k]}: ${(w*100).toFixed(1)}%">${(w * 100).toFixed(0)}</div>`;
+      }
+    }
+  }
+
+  heatmap.innerHTML = html;
+}
+
+function blendColor(weight) {
+  // Blend white -> orange based on weight
+  const r = Math.round(255 - (255 - 216) * weight);
+  const g = Math.round(255 - (255 - 117) * weight);
+  const b = Math.round(255 - (255 - 69) * weight);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function truncate(s, n) {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+function escapeXml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ============================================================
+   Wire up controls
+============================================================ */
+function buildHeadSelector() {
+  const sel = document.getElementById('headSelector');
+  sel.innerHTML = HEADS.map((h, i) =>
+    `<button class="head-btn ${i === currentHeadIdx ? 'active' : ''}" data-idx="${i}">${h.spec}</button>`
+  ).join('');
+  sel.querySelectorAll('.head-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentHeadIdx = parseInt(btn.dataset.idx);
+      sel.querySelectorAll('.head-btn').forEach(b => b.classList.toggle('active', b === btn));
+      render();
+    });
+  });
+}
+
+document.getElementById('sentence').addEventListener('input', (e) => {
+  tokens = tokenize(e.target.value);
+  selectedToken = null;
+  render();
+});
+
+document.querySelectorAll('.ex-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.getElementById('sentence').value = chip.dataset.text;
+    tokens = tokenize(chip.dataset.text);
+    selectedToken = null;
+    render();
+  });
+});
+
+/* ============================================================
+   Init
+============================================================ */
+buildHeadSelector();
+tokens = tokenize(document.getElementById('sentence').value);
+render();
+</script>
+</body>
+</html>
