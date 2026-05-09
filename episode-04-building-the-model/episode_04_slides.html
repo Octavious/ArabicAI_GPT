@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Episode 4 — Building the Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  @font-face{font-family:'Takeaway Combo';src:url('assets/Takeaway-ComboLarg.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
+  :root{--blue:#1E5A7E;--blue-dark:#0F3D5C;--orange:#D87545;--orange-light:#fae0d0;--teal:#1d9e75;--ink:#1a1a1a;--muted:#6b6b6b;--faint:#a8a8a8;--line:#e5e5e5;--bg:#ffffff;--code-bg:#13131f;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#1a1a1a;font-family:'Inter',sans-serif;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+  .deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .slide{width:min(1280px,95vw);aspect-ratio:16/9;background:var(--bg);display:none;position:relative;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,0.4);}
+  .slide.active{display:flex;flex-direction:column;}
+  .brand{position:absolute;top:24px;right:28px;display:flex;align-items:center;gap:12px;z-index:10;}
+  .brand-logo{width:62px;height:62px;display:block;object-fit:cover;border-radius:50%;}
+  .brand-text{font-family:'Takeaway Combo','Inter',sans-serif;font-size:18px;color:var(--muted);direction:rtl;}
+  .slide.dark .brand-text{color:rgba(255,255,255,0.85);}
+  .slide-num{position:absolute;bottom:18px;right:28px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);letter-spacing:.1em;}
+  .slide.dark .slide-num{color:rgba(255,255,255,0.4);}
+  .slide.title{background:linear-gradient(105deg,var(--blue) 0%,#3a5a6e 40%,#7a6045 70%,var(--orange) 100%);justify-content:center;padding:0;}
+  .title .tc{padding:0 90px;z-index:5;}
+  .title .ep-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:20px;}
+  .title h1{font-size:64px;font-weight:300;line-height:1.05;letter-spacing:-.02em;color:white;margin-bottom:20px;}
+  .title .sub{font-size:20px;font-weight:300;color:rgba(255,255,255,.85);max-width:44ch;line-height:1.45;}
+  .title::before{content:"";position:absolute;left:90px;bottom:80px;width:1.5px;height:150px;background:rgba(255,255,255,.4);}
+  .title .dots{position:absolute;right:36%;top:50%;transform:translateY(-50%);display:flex;gap:14px;align-items:center;opacity:.75;}
+  .d1{width:8px;height:8px;background:white;border-radius:50%;}
+  .d2{font-size:22px;font-weight:300;color:white;}
+  .d3{width:8px;height:8px;border:1.5px solid white;border-radius:50%;}
+  .slide.chapter{background:var(--blue-dark);justify-content:center;align-items:flex-start;padding:0 90px;}
+  .chapter .ch-num{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--orange);margin-bottom:16px;}
+  .chapter h2{font-size:52px;font-weight:300;line-height:1.1;letter-spacing:-.02em;color:white;margin-bottom:14px;}
+  .chapter .ch-desc{font-size:20px;color:rgba(255,255,255,.7);max-width:40ch;line-height:1.5;}
+  .chapter .shape-pill{display:inline-block;margin-top:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--orange);}
+  .chapter::before{content:"";position:absolute;left:90px;bottom:90px;width:56px;height:1.5px;background:var(--orange);}
+  .slide.content{padding:60px 72px 52px;}
+  .content .kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--orange);margin-bottom:10px;}
+  .content h2{font-size:30px;font-weight:600;letter-spacing:-.015em;color:var(--ink);margin-bottom:22px;line-height:1.15;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;flex:1;}
+  .code{background:var(--code-bg);border-radius:4px;padding:18px 22px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:#abb2bf;flex:1;overflow:hidden;}
+  .kw{color:#c792ea;}.fn{color:#82aaff;}.cm{color:#4a5568;font-style:italic;}.st{color:#c3e88d;}.nm{color:#f78c6c;}.hl{background:rgba(216,117,69,.22);border-radius:2px;padding:1px 4px;}.qc{color:#f78c6c;}.kc{color:#c3e88d;}.vc{color:#c792ea;}
+  .explain{display:flex;flex-direction:column;gap:12px;}
+  .exp-row{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;background:#f8f8f8;border-radius:4px;}
+  .exp-row .icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;flex-shrink:0;}
+  .exp-row .text{font-size:13px;line-height:1.55;color:var(--ink);}
+  .exp-row .text strong{font-weight:600;}
+  .exp-row .sub-t{font-size:12px;color:var(--muted);margin-top:2px;}
+  .shape-strip{display:flex;align-items:center;gap:0;background:#f8f8f8;border-radius:4px;padding:12px 16px;margin-bottom:16px;}
+  .shape-box{font-family:'JetBrains Mono',monospace;font-size:12px;color:white;padding:7px 12px;border-radius:3px;white-space:nowrap;}
+  .shape-arrow{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--faint);padding:0 8px;flex-shrink:0;}
+  .callout{background:var(--orange-light);border-left:3px solid var(--orange);padding:12px 16px;border-radius:0 3px 3px 0;font-size:13px;line-height:1.5;color:var(--ink);margin-top:14px;}
+  .callout strong{font-weight:600;}
+  .ctable{width:100%;border-collapse:collapse;font-size:13px;}
+  .ctable th{text-align:left;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid #c0c0c0;}
+  .ctable td{padding:9px 12px;border-bottom:1px solid var(--line);}
+  .ctable tr.hl td{background:#fff5ed;font-weight:500;}
+  code{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(30,90,126,.1);color:var(--blue);padding:1px 5px;border-radius:3px;}
+  .param-bars{display:flex;flex-direction:column;gap:8px;}
+  .pbar{display:flex;align-items:center;gap:10px;}
+  .pbar .pname{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:150px;flex-shrink:0;}
+  .pbar .ptrack{flex:1;height:20px;background:#f0f0f0;border-radius:2px;overflow:hidden;}
+  .pbar .pfill{height:100%;border-radius:2px;}
+  .pbar .pcount{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);width:60px;text-align:right;}
+  .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);padding:7px 16px;border-radius:100px;backdrop-filter:blur(8px);font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.7);z-index:1000;}
+  .nav button{background:transparent;border:none;color:white;cursor:pointer;padding:4px 10px;font-family:inherit;font-size:inherit;border-radius:100px;}
+  .nav button:hover{background:rgba(255,255,255,.15);}
+</style>
+</head>
+<body>
+<template id="brand">
+  <div class="brand">
+    <img class="brand-logo" src="assets/logo.png" alt="Arabic AI logo" />
+    <div class="brand-text">&#x630;&#x643;&#x627;&#x621; &#x627;&#x635;&#x637;&#x646;&#x627;&#x639;&#x64A; &#x639;&#x631;&#x628;&#x64A;</div>
+  </div>
+</template>
+<div class="deck" id="deck">
+
+<section class="slide title dark">
+  <div class="tc"><div class="ep-tag">Episode 04</div><h1>Building the Model</h1><p class="sub">Episode 3 was theory. This episode is code. We write model.py from scratch, class by class.</p></div>
+  <div class="dots"><span class="d1"></span><span class="d2">+</span><span class="d3"></span></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">What we build today</div>
+  <h2>Four classes. ~200 lines. One working model.</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># model.py</span>
+
+<span class="kw">class</span> <span class="fn">GPTConfig</span>         <span class="cm"># all hyperparameters</span>
+<span class="kw">class</span> <span class="fn">CausalSelfAttention</span> <span class="cm"># the "talk" phase</span>
+<span class="kw">class</span> <span class="fn">FeedForward</span>         <span class="cm"># the "think" phase</span>
+<span class="kw">class</span> <span class="fn">Block</span>               <span class="cm"># one complete round</span>
+<span class="kw">class</span> <span class="fn">GPT</span>                 <span class="cm"># the full model</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#8594;</div><div class="text">By the end: feed token IDs in, get vocabulary scores out.<div class="sub-t">The model won&#39;t know anything yet &#8212; training is Episode 5.</div></div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#8801;</div><div class="text">Each class maps directly to a step in the Episode 3 Shape Flow.<div class="sub-t">The code is translation, not new theory.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">CLASS 01 OF 05</div><h2>GPTConfig</h2><p class="ch-desc">All hyperparameters in one dataclass. Change one number &#8212; everything adapts.</p><div class="shape-pill">no tensors &#8212; just numbers</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">GPTConfig</div>
+  <h2>Every hyperparameter in one place</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">GPTConfig</span>:
+    vocab_size: <span class="fn">int</span>   = <span class="nm">4096</span>  <span class="cm"># BPE tokenizer</span>
+    block_size: <span class="fn">int</span>   = <span class="nm">256</span>   <span class="cm"># context window</span>
+    n_embd:     <span class="fn">int</span>   = <span class="nm">384</span>   <span class="cm"># embedding dim</span>
+    n_layer:    <span class="fn">int</span>   = <span class="nm">6</span>     <span class="cm"># transformer blocks</span>
+    n_head:     <span class="fn">int</span>   = <span class="nm">6</span>     <span class="cm"># attention heads</span>
+    dropout:  <span class="fn">float</span>   = <span class="nm">0.1</span>  <span class="cm"># regularization</span></div>
+    <table class="ctable"><thead><tr><th>Value</th><th>Why</th></tr></thead><tbody>
+      <tr><td><code>n_embd = 384</code></td><td>Targets ~12M params on 6 GB GPU</td></tr>
+      <tr><td><code>n_layer = 6</code></td><td>Deep enough for TinyStories</td></tr>
+      <tr class="hl"><td><code>n_head = 6</code></td><td>384 &#247; 6 = 64 dims per head</td></tr>
+      <tr><td><code>block_size = 256</code></td><td>Long enough for short stories</td></tr>
+      <tr><td><code>vocab_size = 4096</code></td><td>Our custom BPE vocabulary</td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">GPTConfig &#8212; design choices</div>
+  <h2>Heads and depth: why these numbers?</h2>
+  <div class="two-col">
+    <table class="ctable"><thead><tr><th>n_head</th><th>head_size</th><th>Assessment</th></tr></thead><tbody>
+      <tr><td><code>2</code></td><td><code>192</code></td><td>Too wide &#8212; heads can&#39;t specialize</td></tr>
+      <tr><td><code>3</code></td><td><code>128</code></td><td>Acceptable upper bound</td></tr>
+      <tr class="hl"><td><code>6</code></td><td><code>64</code></td><td>Sweet spot</td></tr>
+      <tr><td><code>8</code></td><td><code>48</code></td><td>Getting narrow</td></tr>
+      <tr><td><code>12</code></td><td><code>32</code></td><td>Borderline</td></tr>
+    </tbody></table>
+    <table class="ctable"><thead><tr><th>Model</th><th>Blocks</th><th>Task</th></tr></thead><tbody>
+      <tr class="hl"><td>Our model</td><td><code>6</code></td><td>Children&#39;s stories</td></tr>
+      <tr><td>GPT-2 small</td><td><code>12</code></td><td>General internet text</td></tr>
+      <tr><td>GPT-2 large</td><td><code>36</code></td><td>General internet text</td></tr>
+      <tr><td>GPT-3</td><td><code>96</code></td><td>Everything</td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">CLASS 02 OF 05</div><h2>CausalSelfAttention</h2><p class="ch-desc">The "talk" phase. Students turn around, read each other&#39;s cards, update their notes.</p><div class="shape-pill">(B, T, C) &#8594; (B, T, C)</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">CausalSelfAttention &#8212; step 1</div>
+  <h2>Compute Q, K, V &#8212; one matrix, three outputs</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># One linear layer, 3&#215; wider output</span>
+self.c_attn = nn.Linear(
+    config.n_embd,
+    <span class="hl">3 * config.n_embd</span>,
+    bias=<span class="kw">False</span>
+)
+
+<span class="cm"># In forward() &#8212; split into Q, K, V</span>
+<span class="qc">q</span>, <span class="kc">k</span>, <span class="vc">v</span> = self.c_attn(x).split(
+    self.n_embd, dim=<span class="nm">2</span>
+)
+<span class="cm"># each shape: (B, T, 384)</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:#f78c6c;">Q</div><div class="text"><strong>Query</strong> &#8212; "what am I looking for?"<div class="sub-t">Matched against every other token&#39;s Key</div></div></div>
+      <div class="exp-row"><div class="icon" style="background:#1d9e75;">K</div><div class="text"><strong>Key</strong> &#8212; "here&#39;s what I am"<div class="sub-t">Compared against the querying token&#39;s Q</div></div></div>
+      <div class="exp-row"><div class="icon" style="background:#c792ea;">V</div><div class="text"><strong>Value</strong> &#8212; "here&#39;s what I&#39;d share"<div class="sub-t">Blended together weighted by attention scores</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">CausalSelfAttention &#8212; step 2</div>
+  <h2>Split into heads &#8212; the reshape</h2>
+  <div class="two-col">
+    <div class="code">head_size = C // self.n_head
+<span class="cm"># 384 // 6 = 64 dims per head</span>
+
+<span class="cm"># (B, T, 384) &#8594; (B, 6, T, 64)</span>
+<span class="qc">q</span> = q.view(B, T, self.n_head, head_size)
+      <span class="hl">.transpose(1, 2)</span>
+
+<span class="kc">k</span> = k.view(B, T, self.n_head, head_size)
+      .transpose(1, 2)
+
+<span class="vc">v</span> = v.view(B, T, self.n_head, head_size)
+      .transpose(1, 2)</div>
+    <div>
+      <div class="shape-strip">
+        <div class="shape-box" style="background:var(--blue);">(B,T,384)</div>
+        <div class="shape-arrow">&#8594; view &#8594;</div>
+        <div class="shape-box" style="background:var(--orange);">(B,T,6,64)</div>
+        <div class="shape-arrow">&#8594; T &#8594;</div>
+        <div class="shape-box" style="background:var(--teal);">(B,6,T,64)</div>
+      </div>
+      <div class="explain">
+        <div class="exp-row"><div class="icon" style="background:var(--blue);">1</div><div class="text"><strong>view()</strong> splits 384 dims into 6 heads &#215; 64 dims each</div></div>
+        <div class="exp-row"><div class="icon" style="background:var(--orange);">2</div><div class="text"><strong>transpose(1,2)</strong> moves head next to batch &#8212; each head now runs independently</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">CausalSelfAttention &#8212; step 3</div>
+  <h2>Score, mask, softmax, blend</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># Q &#215; K&#7488; &#8594; scores (B, 6, T, T)</span>
+att = (<span class="qc">q</span> @ <span class="kc">k</span>.transpose(-2, -1))
+    * (1.0 / math.sqrt(head_size))
+
+<span class="cm"># Hide future positions</span>
+att = att.masked_fill(
+    self.bias[:,:,:T,:T] == <span class="nm">0</span>,
+    <span class="hl">float(<span class="st">&#39;-inf&#39;</span>)</span>
+)
+
+<span class="cm"># Softmax &#8594; weights summing to 1</span>
+att = F.softmax(att, dim=-<span class="nm">1</span>)
+
+<span class="cm"># Weighted blend of Values</span>
+y = att @ <span class="vc">v</span>          <span class="cm"># (B, 6, T, 64)</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#247;</div><div class="text"><strong>Scale by &#8730;64 = 8</strong> &#8212; prevents large scores from collapsing softmax into one winner</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#9650;</div><div class="text"><strong>-inf mask</strong> &#8212; future positions become exactly 0.0 after softmax. Students only read earlier seats.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#8721;</div><div class="text"><strong>att @ v</strong> &#8212; each token receives a weighted blend of all earlier tokens&#39; Values</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">CausalSelfAttention &#8212; step 4</div>
+  <h2>Reassemble and project</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># (B, 6, T, 64) &#8594; (B, T, 384)</span>
+y = y.transpose(1, 2)
+      <span class="hl">.contiguous()</span>
+      .view(B, T, C)
+
+<span class="cm"># Mix head outputs through learned layer</span>
+y = self.resid_dropout(self.c_proj(y))
+
+<span class="kw">return</span> y  <span class="cm"># (B, T, 384) &#8212; same as input</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#8635;</div><div class="text"><strong>transpose + view</strong> &#8212; 6 heads &#215; 64 dims &#8594; one 384-dim vector again</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">!</div><div class="text"><strong>.contiguous()</strong> required before .view() &#8212; transpose() only changes strides, not data layout</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#8594;</div><div class="text"><strong>c_proj</strong> &#8212; the model learns which combinations of heads matter most</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">CLASS 03 OF 05</div><h2>FeedForward</h2><p class="ch-desc">The "think" phase. Each token processes its notes alone. No communication with others.</p><div class="shape-pill">(B, T, C) &#8594; (B, T, C)</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">FeedForward</div>
+  <h2>Expand &#8594; Filter &#8594; Compress</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">class</span> <span class="fn">FeedForward</span>(nn.Module):
+  <span class="kw">def</span> <span class="fn">__init__</span>(self, config):
+    <span class="fn">super</span>().__init__()
+    self.net = nn.Sequential(
+
+      <span class="cm"># Expand: 384 &#8594; 1,536 (4&#215;)</span>
+      nn.Linear(config.n_embd,
+                 <span class="hl">4 * config.n_embd</span>,
+                 bias=<span class="kw">False</span>),
+
+      <span class="cm"># Filter: the non-linearity &#9733;</span>
+      <span class="hl">nn.GELU()</span>,
+
+      <span class="cm"># Compress: 1,536 &#8594; 384</span>
+      nn.Linear(<span class="hl">4 * config.n_embd</span>,
+                 config.n_embd,
+                 bias=<span class="kw">False</span>),
+      nn.Dropout(config.dropout),
+    )</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">4&#215;</div><div class="text"><strong>Expand to 1,536</strong> &#8212; more room to compute useful combinations of the gathered context</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#9733;</div><div class="text"><strong>GELU is the critical line.</strong> Without a non-linearity the whole network collapses into one linear transformation.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#8595;</div><div class="text"><strong>Compress to 384</strong> &#8212; ready for the next block</div></div>
+      <div class="callout"><strong>56% of all parameters live here</strong> &#8212; 2&#215; more than attention.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">CLASS 04 OF 05</div><h2>Block</h2><p class="ch-desc">One complete round. Attention + feed-forward, wrapped in LayerNorm and residuals.</p><div class="shape-pill">(B, T, C) &#8594; (B, T, C)</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">Block</div>
+  <h2>Five lines that do everything</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">class</span> <span class="fn">Block</span>(nn.Module):
+  <span class="kw">def</span> <span class="fn">__init__</span>(self, config):
+    <span class="fn">super</span>().__init__()
+    self.ln_1 = nn.LayerNorm(config.n_embd)
+    self.attn = CausalSelfAttention(config)
+    self.ln_2 = nn.LayerNorm(config.n_embd)
+    self.ffn  = FeedForward(config)
+
+  <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+    <span class="cm"># Talk + residual</span>
+    x = x <span class="hl">+</span> self.attn(self.<span class="hl">ln_1</span>(x))
+
+    <span class="cm"># Think + residual</span>
+    x = x <span class="hl">+</span> self.ffn(self.<span class="hl">ln_2</span>(x))
+
+    <span class="kw">return</span> x  <span class="cm"># (B, T, C) &#8212; unchanged</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">ln</div><div class="text"><strong>LayerNorm before each sub-layer</strong> &#8212; keeps values at a calm scale. Pre-norm (GPT-2 style) is more stable than post-norm.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">+</div><div class="text"><strong>x = x + sublayer(x)</strong> &#8212; students keep original notes and add new ones. Makes 6 stacked layers trainable.</div></div>
+      <div class="callout">Input shape = output shape = (B, T, C). <strong>That&#39;s why we can stack 6 of them.</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">CLASS 05 OF 05</div><h2>GPT</h2><p class="ch-desc">The full model. Embeddings &#8594; 6 blocks &#8594; output. All 9 steps from Episode 3.</p><div class="shape-pill">(B, T) &#8594; (B, T, 4096)</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">GPT &#8212; the forward pass</div>
+  <h2>Nine steps, token IDs to logits</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">def</span> <span class="fn">forward</span>(self, idx, targets=<span class="kw">None</span>):
+  B, T = idx.size()
+
+  tok = self.tok_emb(idx)        <span class="cm"># (B,T,384)</span>
+  pos = self.pos_emb(
+    torch.arange(T, device=idx.device))
+  x = self.drop(tok + pos)       <span class="cm"># (B,T,384)</span>
+
+  x = self.blocks(x)             <span class="cm"># 6 blocks</span>
+  x = self.ln_f(x)               <span class="cm"># final norm</span>
+
+  logits = self.lm_head(x)       <span class="cm"># (B,T,4096)</span>
+
+  <span class="cm"># Weight tying:</span>
+  <span class="cm"># self.tok_emb.weight = self.lm_head.weight</span>
+
+  <span class="kw">return</span> logits, loss</div>
+    <div>
+      <div class="shape-strip" style="flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:10px;"><div class="shape-box" style="background:var(--blue);font-size:11px;">(B, T)</div><span style="font-size:12px;color:var(--muted);">token IDs in</span></div>
+        <div style="display:flex;align-items:center;gap:10px;"><div class="shape-box" style="background:#4a5568;font-size:11px;">(B, T, 384)</div><span style="font-size:12px;color:var(--muted);">after embeddings</span></div>
+        <div style="display:flex;align-items:center;gap:10px;"><div class="shape-box" style="background:#4a5568;font-size:11px;">(B, T, 384)</div><span style="font-size:12px;color:var(--muted);">after 6 blocks</span></div>
+        <div style="display:flex;align-items:center;gap:10px;"><div class="shape-box" style="background:var(--orange);font-size:11px;">(B, T, 4096)</div><span style="font-size:12px;color:var(--muted);">logits out</span></div>
+      </div>
+      <div class="callout" style="margin-top:14px;"><strong>Weight tying:</strong> output projection shares weights with tok_emb. Same dictionary, two directions. Saves ~1.6M parameters.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">The live reveal</div>
+  <h2>Run it &#8212; how many parameters?</h2>
+  <div class="two-col">
+    <div class="code">model = GPT(GPTConfig())
+
+n = <span class="fn">sum</span>(p.numel()
+    <span class="kw">for</span> p <span class="kw">in</span> model.parameters())
+
+<span class="fn">print</span>(f<span class="st">"Parameters: {n:,}"</span>)
+
+<span class="cm"># Output:</span>
+<span class="hl">Parameters: 12,369,920</span>
+
+<span class="cm"># Exactly what we planned in Episode 2.</span></div>
+    <div>
+      <div class="param-bars">
+        <div class="pbar"><span class="pname">FFN (&#215;6 blocks)</span><div class="ptrack"><div class="pfill" style="width:56%;background:var(--orange);"></div></div><span class="pcount">7.08 M</span></div>
+        <div class="pbar"><span class="pname">Attention (&#215;6)</span><div class="ptrack"><div class="pfill" style="width:28%;background:var(--blue);"></div></div><span class="pcount">3.54 M</span></div>
+        <div class="pbar"><span class="pname">Embeddings</span><div class="ptrack"><div class="pfill" style="width:12%;background:var(--teal);"></div></div><span class="pcount">1.57 M</span></div>
+        <div class="pbar"><span class="pname">Other</span><div class="ptrack"><div class="pfill" style="width:2%;background:var(--faint);"></div></div><span class="pcount">~0.2 M</span></div>
+      </div>
+      <div class="callout" style="margin-top:16px;"><strong>56% in feed-forward.</strong> Not attention. Feed-forward is where factual knowledge is stored.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">Before we declare victory</div>
+  <h2>Sanity check &#8212; loss should be ~8.32</h2>
+  <div class="two-col">
+    <div class="code">x = torch.randint(<span class="nm">0</span>, <span class="nm">4096</span>, (<span class="nm">4</span>, <span class="nm">64</span>))
+logits, loss = model(x, x)
+
+<span class="fn">print</span>(f<span class="st">"Logits: {logits.shape}"</span>)
+<span class="fn">print</span>(f<span class="st">"Loss:   {loss.item():.4f}"</span>)
+
+<span class="cm"># Expected:</span>
+<span class="cm"># Logits: torch.Size([4, 64, 4096])</span>
+<span class="hl"><span class="cm"># Loss:   8.3178</span></span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">?</div><div class="text"><strong>Why 8.32?</strong> Random model &#8594; equal probability for all 4,096 tokens. ln(4096) &#8776; 8.32.<div class="sub-t">If you see ~8.32 &#8594; working. Very different &#8594; something is wrong.</div></div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#10003;</div><div class="text"><strong>This is the right starting point.</strong> As confused as possible. Episode 5 brings this down to ~1.7.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide title dark">
+  <div class="tc"><div class="ep-tag">Up next &#8212; Episode 05</div><h1>Training the Model</h1><p class="sub">Loss drops from 8.3 to 1.7. Gibberish becomes stories. The parameters stop being random noise.</p></div>
+  <div class="dots"><span class="d1"></span><span class="d2">+</span><span class="d3"></span></div>
+</section>
+
+</div>
+<div class="nav">
+  <button onclick="prev()">&#8592; prev</button>
+  <span id="progress">1 / 18</span>
+  <button onclick="next()">next &#8594;</button>
+  <button onclick="goFull()" style="margin-left:10px;">&#9974;</button>
+</div>
+<script>
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let cur=0;
+const brand=document.getElementById('brand');
+slides.forEach((s,i)=>{
+  const num=document.createElement('div');
+  num.className='slide-num';
+  num.textContent=String(i+1).padStart(2,'0')+' / '+String(total).padStart(2,'0');
+  s.appendChild(num);
+  s.appendChild(brand.content.cloneNode(true));
+});
+function show(i){slides.forEach(s=>s.classList.remove('active'));cur=Math.max(0,Math.min(total-1,i));slides[cur].classList.add('active');document.getElementById('progress').textContent=`${cur+1} / ${total}`;}
+function next(){show(cur+1);}
+function prev(){show(cur-1);}
+function goFull(){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();prev();}
+  else if(e.key==='f'||e.key==='F')goFull();
+  else if(e.key==='Home')show(0);
+  else if(e.key==='End')show(total-1);
+});
+show(0);
+</script>
+</body>
+</html>
