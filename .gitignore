@@ -20,3 +20,9 @@ build/
 # OS
 Thumbs.db
 .DS_Store
+
+# Generated data & training artifacts (regenerate locally)
+episode-05-training/train.bin
+episode-05-training/validation.bin
+episode-05-training/checkpoint.pt
+episode-06-generation-and-deployment/checkpoint.pt

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Episode 5 — Training the Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  @font-face{font-family:'Takeaway Combo';src:url('assets/Takeaway-ComboLarg.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
+  :root{--blue:#1E5A7E;--blue-dark:#0F3D5C;--orange:#D87545;--orange-light:#fae0d0;--teal:#1d9e75;--ink:#1a1a1a;--muted:#6b6b6b;--faint:#a8a8a8;--line:#e5e5e5;--bg:#ffffff;--code-bg:#13131f;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#1a1a1a;font-family:'Inter',sans-serif;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+  .deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  .slide{width:min(1280px,95vw);aspect-ratio:16/9;background:var(--bg);display:none;position:relative;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,0.4);}
+  .slide.active{display:flex;flex-direction:column;}
+  .brand{position:absolute;top:24px;right:28px;display:flex;align-items:center;gap:12px;z-index:10;}
+  .brand-logo{width:62px;height:62px;display:block;object-fit:cover;border-radius:50%;}
+  .brand-text{font-family:'Takeaway Combo','Inter',sans-serif;font-size:18px;color:var(--muted);direction:rtl;}
+  .slide.dark .brand-text{color:rgba(255,255,255,0.85);}
+  .slide-num{position:absolute;bottom:18px;right:28px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);letter-spacing:.1em;}
+  .slide.dark .slide-num{color:rgba(255,255,255,0.4);}
+  .slide.title{background:linear-gradient(105deg,var(--blue) 0%,#3a5a6e 40%,#7a6045 70%,var(--orange) 100%);justify-content:center;padding:0;}
+  .title .tc{padding:0 90px;z-index:5;}
+  .title .ep-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:20px;}
+  .title h1{font-size:64px;font-weight:300;line-height:1.05;letter-spacing:-.02em;color:white;margin-bottom:20px;}
+  .title .sub{font-size:20px;font-weight:300;color:rgba(255,255,255,.85);max-width:44ch;line-height:1.45;}
+  .title::before{content:"";position:absolute;left:90px;bottom:80px;width:1.5px;height:150px;background:rgba(255,255,255,.4);}
+  .title .dots{position:absolute;right:36%;top:50%;transform:translateY(-50%);display:flex;gap:14px;align-items:center;opacity:.75;}
+  .d1{width:8px;height:8px;background:white;border-radius:50%;}
+  .d2{font-size:22px;font-weight:300;color:white;}
+  .d3{width:8px;height:8px;border:1.5px solid white;border-radius:50%;}
+  .slide.chapter{background:var(--blue-dark);justify-content:center;align-items:flex-start;padding:0 90px;}
+  .chapter .ch-num{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--orange);margin-bottom:16px;}
+  .chapter h2{font-size:52px;font-weight:300;line-height:1.1;letter-spacing:-.02em;color:white;margin-bottom:14px;}
+  .chapter .ch-desc{font-size:20px;color:rgba(255,255,255,.7);max-width:40ch;line-height:1.5;}
+  .chapter .shape-pill{display:inline-block;margin-top:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--orange);}
+  .chapter::before{content:"";position:absolute;left:90px;bottom:90px;width:56px;height:1.5px;background:var(--orange);}
+  .slide.content{padding:60px 72px 52px;}
+  .content .kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--orange);margin-bottom:10px;}
+  .content h2{font-size:30px;font-weight:600;letter-spacing:-.015em;color:var(--ink);margin-bottom:22px;line-height:1.15;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;flex:1;}
+  .code{background:var(--code-bg);border-radius:4px;padding:18px 22px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:#abb2bf;flex:1;overflow:hidden;}
+  .kw{color:#c792ea;}.fn{color:#82aaff;}.cm{color:#4a5568;font-style:italic;}.st{color:#c3e88d;}.nm{color:#f78c6c;}.hl{background:rgba(216,117,69,.22);border-radius:2px;padding:1px 4px;}
+  .explain{display:flex;flex-direction:column;gap:12px;}
+  .exp-row{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;background:#f8f8f8;border-radius:4px;}
+  .exp-row .icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;flex-shrink:0;}
+  .exp-row .text{font-size:13px;line-height:1.55;color:var(--ink);}
+  .exp-row .text strong{font-weight:600;}
+  .exp-row .sub-t{font-size:12px;color:var(--muted);margin-top:2px;}
+  .callout{background:var(--orange-light);border-left:3px solid var(--orange);padding:12px 16px;border-radius:0 3px 3px 0;font-size:13px;line-height:1.5;color:var(--ink);margin-top:14px;}
+  .callout strong{font-weight:600;}
+  .ctable{width:100%;border-collapse:collapse;font-size:13px;}
+  .ctable th{text-align:left;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid #c0c0c0;}
+  .ctable td{padding:9px 12px;border-bottom:1px solid var(--line);}
+  .ctable tr.hl td{background:#fff5ed;font-weight:500;}
+  code{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(30,90,126,.1);color:var(--blue);padding:1px 5px;border-radius:3px;}
+  .loss-strip{display:flex;align-items:center;gap:0;background:#f8f8f8;border-radius:4px;padding:14px 16px;margin-bottom:16px;}
+  .loss-box{font-family:'JetBrains Mono',monospace;font-size:12px;color:white;padding:7px 11px;border-radius:3px;white-space:nowrap;}
+  .loss-arrow{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--faint);padding:0 7px;flex-shrink:0;}
+  .big-stat{font-size:80px;font-weight:200;color:var(--orange);letter-spacing:-.04em;line-height:1;}
+  .big-stat-label{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:8px;}
+  .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);padding:7px 16px;border-radius:100px;backdrop-filter:blur(8px);font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.7);z-index:1000;}
+  .nav button{background:transparent;border:none;color:white;cursor:pointer;padding:4px 10px;font-family:inherit;font-size:inherit;border-radius:100px;}
+  .nav button:hover{background:rgba(255,255,255,.15);}
+</style>
+</head>
+<body>
+<template id="brand">
+  <div class="brand">
+    <img class="brand-logo" src="assets/logo.png" alt="Arabic AI logo" />
+    <div class="brand-text">&#x630;&#x643;&#x627;&#x621; &#x627;&#x635;&#x637;&#x646;&#x627;&#x639;&#x64A; &#x639;&#x631;&#x628;&#x64A;</div>
+  </div>
+</template>
+<div class="deck" id="deck">
+
+<section class="slide title dark">
+  <div class="tc"><div class="ep-tag">Episode 05</div><h1>Training the Model</h1><p class="sub">The model is built but knows nothing. This episode teaches it. Loss drops from 8.3 to 1.7.</p></div>
+  <div class="dots"><span class="d1"></span><span class="d2">+</span><span class="d3"></span></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">What we build today</div>
+  <h2>Three files. Prepare, load, train.</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># prepare_data.py  (run once)</span>
+<span class="cm"># tokenize TinyStories -&gt; .bin files</span>
+
+<span class="cm"># data_loader.py</span>
+<span class="kw">class</span> <span class="fn">DataLoader</span>
+    <span class="cm"># pull random batches from train.bin</span>
+
+<span class="cm"># train.py</span>
+<span class="kw">def</span> <span class="fn">get_learning_rate</span>(step)
+<span class="kw">def</span> <span class="fn">estimate_loss</span>(model, loader)
+<span class="kw">def</span> <span class="fn">main</span>()
+    <span class="cm"># the training loop itself</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">1</div><div class="text"><strong>Prepare</strong> &#8212; run the Episode 2 tokenizer over the whole dataset, save as binary. One-time step.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">2</div><div class="text"><strong>Load</strong> &#8212; pull random batches of that binary data, one per training step.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">3</div><div class="text"><strong>Train</strong> &#8212; the loop: get batch &#8594; forward &#8594; loss &#8594; backward &#8594; update. ~25,000 times.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">FILE 01 OF 03</div><h2>prepare_data.py</h2><p class="ch-desc">Run the Episode 2 tokenizer over all of TinyStories. Save the token IDs as binary files.</p><div class="shape-pill">text &#8594; train.bin + validation.bin</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">prepare_data.py &#8212; the conversion</div>
+  <h2>From 2 million stories to one binary stream</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># Load the Episode 2 tokenizer</span>
+tokenizer = Tokenizer.from_file(
+    <span class="st">"tinystories_tokenizer.json"</span>)
+
+<span class="cm"># Load the dataset from Hugging Face</span>
+dataset = load_dataset(
+    <span class="st">"roneneldan/TinyStories"</span>)
+
+<span class="cm"># Tokenize every story, concatenate</span>
+all_ids = []
+<span class="kw">for</span> story <span class="kw">in</span> dataset[<span class="st">'train'</span>]:
+    ids = tokenizer.encode(story[<span class="st">'text'</span>]).ids
+    all_ids.extend(ids)
+
+<span class="cm"># Save as flat uint16 binary</span>
+arr = np.array(all_ids, dtype=np.uint16)
+arr.tofile(<span class="st">'train.bin'</span>)</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#8635;</div><div class="text"><strong>Run once.</strong> Tokenization never changes &#8212; do it once, then every training run just reads the .bin files.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#8801;</div><div class="text"><strong>One flat stream.</strong> All stories concatenated end-to-end. A random window may cross a story boundary &#8212; the model learns that as just another pattern.</div></div>
+      <div class="callout">Why binary and not text? A flat uint16 file can be <strong>memory-mapped</strong> &#8212; that's what lets the data loader read random slices without loading the whole file.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">FILE 02 OF 03</div><h2>data_loader.py</h2><p class="ch-desc">Pull a random batch of real text out of the 485-million-token train.bin file.</p><div class="shape-pill">.bin file &#8594; (32, 256) batches</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">data_loader.py &#8212; memory-mapping</div>
+  <h2>Treat a 1 GB file like an array &#8212; using no RAM</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># np.memmap opens the file WITHOUT</span>
+<span class="cm"># loading it into RAM. The OS pages in</span>
+<span class="cm"># only the bytes we actually touch.</span>
+
+data = np.memmap(
+    path,
+    dtype=np.uint16,   <span class="cm"># must match Episode 2</span>
+    mode=<span class="st">'r'</span>
+)
+
+<span class="cm"># Pick batch_size random windows</span>
+max_start = len(data) - block_size - 1
+starts = torch.randint(
+    0, max_start, (batch_size,)
+)</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#128190;</div><div class="text"><strong>uint16</strong> &#8212; 2 bytes per token, holds 0&#8211;65,535. Plenty for our 4,096 vocab. Must match what Episode 2 wrote.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#127922;</div><div class="text"><strong>Random windows</strong> &#8212; each step grabs 32 random 256-token slices. The model never sees the data in order.</div></div>
+      <div class="callout">We re-open the memmap every batch &#8212; a known quirk where one long-lived memmap slowly leaks memory over a long run.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">data_loader.py &#8212; the target shift</div>
+  <h2>Why y is just x shifted by one</h2>
+  <div class="two-col">
+    <div class="code"><span class="cm"># The model predicts "the next token."</span>
+<span class="cm"># So the answer for each position is</span>
+<span class="cm"># simply the token that comes after it.</span>
+
+x = data[i      : i + block_size]
+y = data[i + 1  : i + block_size + 1]
+
+<span class="cm"># Example:</span>
+<span class="cm"># data = [The, cat, sat, on, the, mat]</span>
+<span class="cm"># x    = [The, cat, sat, on ]</span>
+<span class="cm"># y    = [cat, sat, on,  the]</span>
+<span class="cm">#</span>
+<span class="cm"># "after The -> cat", "after cat -> sat"</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#8594;</div><div class="text"><strong>x</strong> is the input sequence the model reads.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#8594;</div><div class="text"><strong>y</strong> is the same sequence shifted left by one &#8212; every position now holds its own correct next token.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#10003;</div><div class="text">No labels to create by hand. The text labels itself &#8212; this is what "self-supervised" means.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide chapter dark">
+  <div><div class="ch-num">FILE 03 OF 03</div><h2>train.py</h2><p class="ch-desc">The training loop, the optimizer, the learning rate schedule, and checkpointing.</p><div class="shape-pill">loss 8.3 &#8594; loss 1.7</div></div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">train.py &#8212; the core loop</div>
+  <h2>Five steps, repeated 25,000 times</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(MAX_STEPS):
+
+  <span class="cm"># 1. get a batch of real text</span>
+  x, y = loader.get_batch(<span class="st">'train'</span>)
+
+  <span class="cm"># 2. forward pass + loss</span>
+  logits, loss = model(x, y)
+
+  <span class="cm"># 3. backward pass</span>
+  optimizer.zero_grad(set_to_none=<span class="kw">True</span>)
+  loss.backward()
+
+  <span class="cm"># 4. clip gradients</span>
+  clip_grad_norm_(model.parameters(), <span class="nm">1.0</span>)
+
+  <span class="cm"># 5. update the weights</span>
+  optimizer.step()</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">2</div><div class="text"><strong>Forward</strong> &#8212; runs all 9 steps from Episode 3, returns the loss because we passed targets.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">3</div><div class="text"><strong>Backward</strong> &#8212; computes how each of the 12M parameters contributed to the error. zero_grad first because PyTorch accumulates.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">5</div><div class="text"><strong>Update</strong> &#8212; the optimizer nudges every parameter toward "less wrong." This is the actual learning.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">train.py &#8212; the optimizer</div>
+  <h2>AdamW &#8212; adaptive steps + weight decay</h2>
+  <div class="two-col">
+    <div class="code">optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=LEARNING_RATE,
+    weight_decay=<span class="nm">0.1</span>,
+    betas=(<span class="nm">0.9</span>, <span class="nm">0.95</span>),
+)
+
+<span class="cm"># Adam part: each parameter gets its</span>
+<span class="cm"># own adaptive step size, based on a</span>
+<span class="cm"># running average of its gradients.</span>
+<span class="cm">#</span>
+<span class="cm"># W part: weight decay gently pulls</span>
+<span class="cm"># weights toward zero (regularization).</span></div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">A</div><div class="text"><strong>Adam</strong> &#8212; tracks momentum and variance per parameter. Parameters with consistently large gradients take smaller, more careful steps.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">W</div><div class="text"><strong>Weight decay</strong> &#8212; pulls weights toward zero. A regularization that reduces overfitting.</div></div>
+      <div class="callout">AdamW is the standard optimizer for transformers. Used in GPT-2, GPT-3, LLaMA, and nearly every modern model.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">train.py &#8212; learning rate schedule</div>
+  <h2>The learning rate is not constant</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">def</span> <span class="fn">get_learning_rate</span>(step):
+
+  <span class="cm"># Phase 1: linear warmup</span>
+  <span class="kw">if</span> step &lt; WARMUP_STEPS:
+    <span class="kw">return</span> LR * (step+1) / WARMUP_STEPS
+
+  <span class="cm"># Phase 2: cosine decay</span>
+  progress = (step - WARMUP_STEPS) /
+             (MAX_STEPS - WARMUP_STEPS)
+  cosine = <span class="nm">0.5</span> * (<span class="nm">1.0</span> + cos(pi * progress))
+  <span class="kw">return</span> MIN_LR + cosine * (LR - MIN_LR)</div>
+    <div>
+      <div class="loss-strip">
+        <div class="loss-box" style="background:var(--faint);">~0</div>
+        <div class="loss-arrow">&#8594; warmup &#8594;</div>
+        <div class="loss-box" style="background:var(--orange);">3e-4 peak</div>
+        <div class="loss-arrow">&#8594; cosine &#8594;</div>
+        <div class="loss-box" style="background:var(--blue);">3e-5</div>
+      </div>
+      <div class="explain">
+        <div class="exp-row"><div class="icon" style="background:var(--orange);">1</div><div class="text"><strong>Warmup (steps 0&#8211;1000)</strong> &#8212; ramps up gently. Large updates on random initial weights would destabilize training.</div></div>
+        <div class="exp-row"><div class="icon" style="background:var(--blue);">2</div><div class="text"><strong>Cosine decay (1000&#8211;25000)</strong> &#8212; big steps early for fast progress, small steps later to settle into a good solution.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">train.py &#8212; validation</div>
+  <h2>Check loss on data the model never trains on</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">@torch.no_grad</span>()
+<span class="kw">def</span> <span class="fn">estimate_loss</span>(model, loader):
+  model.eval()
+  <span class="kw">for</span> split <span class="kw">in</span> [<span class="st">'train'</span>, <span class="st">'val'</span>]:
+    losses = torch.zeros(EVAL_BATCHES)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(EVAL_BATCHES):
+      x, y = loader.get_batch(split)
+      _, loss = model(x, y)
+      losses[i] = loss.item()
+    results[split] = losses.mean()
+  model.train()
+  <span class="kw">return</span> results</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">T</div><div class="text"><strong>Train loss</strong> &#8212; how well the model fits the data it sees.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">V</div><div class="text"><strong>Validation loss</strong> &#8212; how well it generalizes to data it never trained on.</div></div>
+      <div class="callout">If train loss drops but validation loss stalls or rises &#8212; that&#39;s <strong>overfitting</strong>. The model is memorizing, not learning.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">Two concepts to recognize on sight</div>
+  <h2>Underfitting vs Overfitting &#8212; the student analogy</h2>
+  <div class="two-col">
+    <div class="explain">
+      <div class="exp-row" style="background:#fff5ed;">
+        <div class="icon" style="background:#a8451a;">U</div>
+        <div class="text"><strong>Underfitting</strong> &#8212; the model is too dumb. Hasn&#39;t learned enough yet.
+          <div class="sub-t">Like a student who didn&#39;t study. Fails practice AND real test.</div>
+          <div class="sub-t" style="margin-top:4px;color:var(--ink);"><strong>Signs:</strong> both train and val loss are high.</div>
+          <div class="sub-t" style="color:var(--ink);"><strong>Cure:</strong> train longer, bigger model.</div>
+        </div>
+      </div>
+      <div class="exp-row" style="background:#fce4d6;">
+        <div class="icon" style="background:#b5651d;">O</div>
+        <div class="text"><strong>Overfitting</strong> &#8212; the model memorized the training data.
+          <div class="sub-t">Like a student who memorized the practice test. Aces practice, fails the real one.</div>
+          <div class="sub-t" style="margin-top:4px;color:var(--ink);"><strong>Signs:</strong> train loss low, val loss stalls or rises.</div>
+          <div class="sub-t" style="color:var(--ink);"><strong>Cure:</strong> stop training, more data, dropout.</div>
+        </div>
+      </div>
+      <div class="exp-row" style="background:#d4e8d4;">
+        <div class="icon" style="background:#2d7a2d;">&#10003;</div>
+        <div class="text"><strong>Healthy</strong> &#8212; the model is learning real patterns.
+          <div class="sub-t">Like a student who actually studied. Does well on both tests.</div>
+          <div class="sub-t" style="margin-top:4px;color:var(--ink);"><strong>Signs:</strong> train and val loss drop together, stay close.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 400 280" style="width:100%;height:auto;">
+        <!-- axes -->
+        <line x1="40" y1="20" x2="40" y2="240" stroke="#a8a8a8" stroke-width="1.5"/>
+        <line x1="40" y1="240" x2="380" y2="240" stroke="#a8a8a8" stroke-width="1.5"/>
+        <text x="40" y="260" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:#6b6b6b;">0</text>
+        <text x="380" y="260" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:#6b6b6b;">25k steps</text>
+        <text x="25" y="25" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:#6b6b6b;">loss</text>
+
+        <!-- Underfitting zone (left, both high) -->
+        <rect x="40" y="20" width="80" height="220" fill="#a8451a" opacity="0.08"/>
+        <text x="80" y="265" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:#a8451a;font-weight:600;">UNDERFIT</text>
+
+        <!-- Healthy zone (middle) -->
+        <rect x="120" y="20" width="160" height="220" fill="#2d7a2d" opacity="0.08"/>
+        <text x="200" y="265" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:#2d7a2d;font-weight:600;">HEALTHY</text>
+
+        <!-- Overfit zone (right) -->
+        <rect x="280" y="20" width="100" height="220" fill="#b5651d" opacity="0.10"/>
+        <text x="330" y="265" text-anchor="middle" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:#b5651d;font-weight:600;">OVERFIT</text>
+
+        <!-- Train loss curve (orange) - drops smoothly, keeps dropping -->
+        <path d="M 40,50 Q 90,90 130,140 Q 180,180 230,200 Q 280,215 330,222 L 380,225" fill="none" stroke="#D87545" stroke-width="2.5"/>
+        <!-- Val loss curve (blue) - drops with train, but flattens then rises in overfit zone -->
+        <path d="M 40,52 Q 90,92 130,142 Q 180,182 230,200 Q 260,205 280,205 Q 310,200 340,185 L 380,160" fill="none" stroke="#1E5A7E" stroke-width="2.5"/>
+
+        <!-- Legend -->
+        <line x1="50" y1="45" x2="65" y2="45" stroke="#D87545" stroke-width="2.5"/>
+        <text x="70" y="48" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:#6b6b6b;">train</text>
+        <line x1="100" y1="45" x2="115" y2="45" stroke="#1E5A7E" stroke-width="2.5"/>
+        <text x="120" y="48" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:#6b6b6b;">val</text>
+
+        <!-- Annotation arrow showing the gap -->
+        <line x1="340" y1="185" x2="340" y2="225" stroke="#a8451a" stroke-width="1" stroke-dasharray="2,2"/>
+        <text x="346" y="207" style="font-family:'Newsreader',serif;font-size:10px;fill:#a8451a;font-style:italic;">gap!</text>
+      </svg>
+      <div class="callout" style="margin-top:8px;">
+        On TinyStories (485M tokens) our 12M model is unlikely to overfit in 25,000 steps. But on smaller datasets or bigger models, this is the most common failure.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">train.py &#8212; checkpointing</div>
+  <h2>Save the model &#8212; but only when it improves</h2>
+  <div class="two-col">
+    <div class="code"><span class="kw">if</span> losses[<span class="st">'val'</span>] &lt; best_val_loss:
+    best_val_loss = losses[<span class="st">'val'</span>]
+    checkpoint = {
+        <span class="st">'model'</span>:     model.state_dict(),
+        <span class="st">'optimizer'</span>: optimizer.state_dict(),
+        <span class="st">'config'</span>:    config,
+        <span class="st">'step'</span>:      step,
+        <span class="st">'val_loss'</span>:  best_val_loss,
+    }
+    torch.save(checkpoint, <span class="st">'checkpoint.pt'</span>)</div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">&#9745;</div><div class="text"><strong>Only on improvement</strong> &#8212; if training later goes bad, the saved checkpoint is still the best version the model ever reached.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">&#128190;</div><div class="text">Saves weights, optimizer state, and step number &#8212; everything needed to resume training later.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">What good looks like</div>
+  <h2>The loss should drop fast, then slow</h2>
+  <div class="two-col">
+    <div>
+      <table class="ctable">
+        <thead><tr><th>Step</th><th>Loss</th><th>What it can do</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>~8.3</td><td>Nothing &#8212; pure noise</td></tr>
+          <tr><td>1,000</td><td>~4.5</td><td>Letter clusters, short words</td></tr>
+          <tr><td>5,000</td><td>~2.6</td><td>Real words, rough order</td></tr>
+          <tr><td>15,000</td><td>~1.9</td><td>Mostly-correct grammar</td></tr>
+          <tr class="hl"><td>25,000</td><td>~1.7</td><td>Coherent short stories</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">&#10003;</div><div class="text"><strong>Healthy:</strong> steep drop early, then a long slow decline. Train and validation stay close.</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--orange);">!</div><div class="text"><strong>Trouble:</strong> loss climbs and stays up (LR too high), or train/val gap widens fast (overfitting).</div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--blue);">~</div><div class="text"><strong>Normal:</strong> per-step loss bounces around &#8212; every batch is different. The trend is what matters.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide content">
+  <div class="kicker">The payoff</div>
+  <h2>From noise to stories &#8212; same model, 25,000 steps</h2>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;">
+      <div class="big-stat">8.3 &#8594; 1.7</div>
+      <div class="big-stat-label">loss, over ~2 hours of training</div>
+    </div>
+    <div class="explain">
+      <div class="exp-row"><div class="icon" style="background:var(--faint);">0</div><div class="text"><strong>Before:</strong> "Once upon a time rable consec distrib theid Dest pliant..."<div class="sub-t">12 million random numbers.</div></div></div>
+      <div class="exp-row"><div class="icon" style="background:var(--teal);">25k</div><div class="text"><strong>After:</strong> "Once upon a time, there was a little girl named Lily. She found a ball in the garden..."<div class="sub-t">The same 12 million numbers &#8212; now arranged by training.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide title dark">
+  <div class="tc"><div class="ep-tag">Up next &#8212; Episode 06</div><h1>Watching It Learn</h1><p class="sub">We don't write new code. We read the training run &#8212; loss curves, the train/val gap, and the sample outputs at every checkpoint.</p></div>
+  <div class="dots"><span class="d1"></span><span class="d2">+</span><span class="d3"></span></div>
+</section>
+
+</div>
+<div class="nav">
+  <button onclick="prev()">&#8592; prev</button>
+  <span id="progress">1 / 17</span>
+  <button onclick="next()">next &#8594;</button>
+  <button onclick="goFull()" style="margin-left:10px;">&#9974;</button>
+</div>
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+const brand = document.getElementById('brand');
+
+slides.forEach((s, i) => {
+  const num = document.createElement('div');
+  num.className = 'slide-num';
+  num.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+  s.appendChild(num);
+  s.appendChild(brand.content.cloneNode(true));
+});
+
+function show(i) {
+  slides.forEach(s => s.classList.remove('active'));
+  cur = Math.max(0, Math.min(total - 1, i));
+  slides[cur].classList.add('active');
+  document.getElementById('progress').textContent = (cur + 1) + ' / ' + total;
+}
+
+function next() { show(cur + 1); }
+function prev() { show(cur - 1); }
+function goFull() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  else if (e.key === 'f' || e.key === 'F') goFull();
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(total - 1);
+});
+
+show(0);
+</script>
+</body>
+</html>

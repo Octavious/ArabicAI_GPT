@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Training Log Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --ink: #161614;
+    --muted: #6e6c66;
+    --line: #e0ddd0;
+    --line-strong: #c7c3b2;
+    --accent: #e2623b;
+    --accent-deep: #a03c1c;
+    --blue: #245e8a;
+    --green: #3d7a4e;
+    --panel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body { padding: 56px 24px 120px; min-height: 100vh; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  header {
+    margin-bottom: 44px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 32px;
+  }
+
+  .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-size: clamp(40px, 5.5vw, 64px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.035em;
+    margin: 0 0 16px;
+    font-variation-settings: "opsz" 48;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .lede {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 680px;
+    margin: 0;
+  }
+
+  .input-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 28px;
+    margin-bottom: 40px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 8px 28px -16px rgba(0,0,0,0.12);
+  }
+
+  .input-panel label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    resize: vertical;
+    color: var(--ink);
+  }
+
+  textarea:focus { outline: none; border-color: var(--accent); }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 11px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  button:hover { background: var(--accent); }
+
+  button.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+
+  button.secondary:hover {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  .status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+
+  .summary.hidden { display: none; }
+
+  .stat {
+    background: var(--panel);
+    padding: 20px 22px;
+  }
+
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 32;
+  }
+
+  .stat-value em {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    font-style: normal;
+    margin-left: 5px;
+    font-weight: 400;
+  }
+
+  .stat-value.good { color: var(--green); }
+  .stat-value.warn { color: var(--accent-deep); }
+
+  .chart-section {
+    display: none;
+    margin-bottom: 48px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 8px 28px -16px rgba(0,0,0,0.08);
+  }
+
+  .chart-section.visible { display: block; }
+
+  .chart-header { margin-bottom: 18px; }
+
+  .chart-header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 32;
+  }
+
+  .chart-header .sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .chart-box {
+    position: relative;
+    height: 340px;
+    margin: 16px 0 22px;
+  }
+
+  .explain {
+    font-size: 16px;
+    line-height: 1.65;
+    color: #2d2c29;
+    max-width: 78ch;
+  }
+
+  .explain p { margin: 0 0 14px; }
+  .explain p:last-child { margin-bottom: 0; }
+
+  .explain .lead::first-letter {
+    font-size: 3.2em;
+    float: left;
+    line-height: 0.85;
+    padding: 6px 10px 0 0;
+    font-weight: 500;
+    color: var(--accent);
+    font-variation-settings: "opsz" 72;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: 1px;
+  }
+
+  .tag.good { background: #e4f0e7; color: var(--green); }
+  .tag.warn { background: #fae8e0; color: var(--accent-deep); }
+  .tag.info { background: #e3edf5; color: var(--blue); }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    background: #efece1;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-size: 17px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">training log · inspector</div>
+    <h1>A training run, <em>read like a story.</em></h1>
+    <p class="lede">
+      Paste the output of your training script below. We'll extract the numbers, draw the curves,
+      and walk you through what each one is telling you about your model's learning.
+    </p>
+  </header>
+
+  <section class="input-panel">
+    <label for="input">Training log</label>
+    <textarea id="input" placeholder="step    500 | train 5.1030 | val 3.7570 | lr 3.00e-04 | 380.6ms/step&#10;step   1000 | train 3.4063 | val 3.0372 | lr 3.00e-04 | 324.0ms/step&#10;..."></textarea>
+    <div class="controls">
+      <button id="parseBtn">Visualize log</button>
+      <button id="sampleBtn" class="secondary">Load sample</button>
+      <button id="clearBtn" class="secondary">Clear</button>
+    </div>
+    <div class="status" id="status">Waiting for input…</div>
+  </section>
+
+  <div class="summary hidden" id="summary"></div>
+
+  <section class="chart-section" id="chart1">
+    <div class="chart-header">
+      <div class="sub">chart 1 of 4</div>
+      <h2>Loss curves — is your model learning?</h2>
+    </div>
+    <div class="chart-box"><canvas id="lossChart"></canvas></div>
+    <div class="explain">
+      <p class="lead" id="loss-verdict"></p>
+      <p>
+        <strong>Loss</strong> measures how "surprised" the model is by the correct next token. Lower is better. At initialization,
+        loss should be near <code>ln(vocab_size)</code> — that's the surprise of a model guessing uniformly at random.
+        For a 4,096-token vocabulary, that's about <strong>8.32</strong>. Each drop of 1.0 in loss means the model's
+        predictions became roughly <strong>2.7× more concentrated</strong> on the right answer.
+      </p>
+      <p>
+        The shape you want is a <strong>steep initial drop</strong> (the model learns the easy statistics of language:
+        common words, letter patterns, punctuation) followed by a <strong>long gentle decline</strong> as it learns
+        finer structure. Sharp later-stage drops are suspicious; flat plateaus mean learning has stalled.
+      </p>
+      <p>
+        Train loss and val loss should move together. <span class="tag good">healthy</span> They track each other closely.
+        <span class="tag warn">overfitting</span> Train keeps dropping while val flattens or rises — the model is memorizing
+        rather than generalizing.
+      </p>
+    </div>
+  </section>
+
+  <section class="chart-section" id="chart2">
+    <div class="chart-header">
+      <div class="sub">chart 2 of 4</div>
+      <h2>Train vs val gap — is it generalizing?</h2>
+    </div>
+    <div class="chart-box"><canvas id="gapChart"></canvas></div>
+    <div class="explain">
+      <p class="lead" id="gap-verdict"></p>
+      <p>
+        This is <code>train_loss − val_loss</code> at each evaluation. It tells you whether the model is learning
+        <strong>real patterns</strong> (things that also work on unseen data) or just <strong>memorizing</strong> the
+        training set.
+      </p>
+      <p>
+        A <strong>growing positive gap</strong> (train much lower than val) is the classic signature of overfitting —
+        the model is getting very good at stories it has seen but no better at new ones. A <strong>stable gap</strong>
+        near zero is what you want, and a <strong>negative gap</strong> (val lower than train) is common early in
+        training because the reported train loss is averaged over the whole window, including worse early steps.
+      </p>
+      <p>
+        For a small model on TinyStories, we expect gaps between −0.1 and +0.1 throughout training. If you see a
+        persistent gap beyond +0.2, that's a signal to reduce model capacity, add more data, or increase dropout.
+      </p>
+    </div>
+  </section>
+
+  <section class="chart-section" id="chart3">
+    <div class="chart-header">
+      <div class="sub">chart 3 of 4</div>
+      <h2>Learning rate — warmup and cosine decay</h2>
+    </div>
+    <div class="chart-box"><canvas id="lrChart"></canvas></div>
+    <div class="explain">
+      <p class="lead" id="lr-verdict"></p>
+      <p>
+        The learning rate is how big a step the optimizer takes when adjusting each parameter. Too big and training
+        explodes; too small and learning stalls.
+      </p>
+      <p>
+        The shape here has two phases. The <strong>warmup</strong> (first few hundred steps) linearly ramps the
+        learning rate up from zero to its peak — this prevents instability at the start when weights are still
+        random. The <strong>cosine decay</strong> smoothly drops it back down, letting the model take smaller
+        and smaller steps as it homes in on a good minimum.
+      </p>
+      <p>
+        Think of it like adjusting a dial: you crank it hard at first to get in the general neighborhood, then
+        dial in finer and finer corrections as you get close to the answer. A flat learning rate throughout
+        training would either start too unstable or end too coarse.
+      </p>
+    </div>
+  </section>
+
+  <section class="chart-section" id="chart4">
+    <div class="chart-header">
+      <div class="sub">chart 4 of 4</div>
+      <h2>Perplexity — the intuitive quality metric</h2>
+    </div>
+    <div class="chart-box"><canvas id="pplChart"></canvas></div>
+    <div class="explain">
+      <p class="lead" id="ppl-verdict"></p>
+      <p>
+        <strong>Perplexity</strong> is just <code>e^loss</code> — the same information as the loss curve but on a
+        scale humans can actually interpret. A perplexity of <strong>N</strong> means the model's predictions are
+        roughly as accurate as picking from <strong>N equally likely options</strong>. A random model on a 4,096-token
+        vocabulary has perplexity 4,096.
+      </p>
+      <p>
+        You can read improvement here as intuition: going from perplexity 4,000 to 40 means the model has narrowed
+        the field 100×. Going from 40 to 4 means another 10×. Each halving of perplexity typically costs more
+        training than the last — which is why the curve bends sharply at first and flattens later.
+      </p>
+      <p>
+        For a well-trained small model on TinyStories, final perplexity in the <strong>4–6 range</strong> is
+        excellent. GPT-2-small, trained on much richer data, sits around 35 on generic English; our simpler
+        domain explains why we can reach much lower.
+      </p>
+    </div>
+  </section>
+
+  <div class="empty" id="emptyState">
+    Paste a training log above and click <strong>Visualize log</strong> to begin.
+  </div>
+
+</div>
+
+<script>
+/* ===== Chart.js defaults ===== */
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6e6c66';
+Chart.defaults.borderColor = '#e0ddd0';
+Chart.defaults.elements.line.borderWidth = 2;
+Chart.defaults.elements.point.radius = 0;
+Chart.defaults.elements.point.hoverRadius = 4;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Chart.defaults.plugins.legend.labels.padding = 14;
+Chart.defaults.plugins.legend.labels.font = { family: "'IBM Plex Mono', monospace", size: 11 };
+Chart.defaults.plugins.tooltip.titleFont = { family: "'IBM Plex Mono', monospace", size: 11 };
+Chart.defaults.plugins.tooltip.bodyFont = { family: "'IBM Plex Mono', monospace", size: 11 };
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.backgroundColor = '#161614';
+Chart.defaults.plugins.tooltip.titleColor = '#fafaf7';
+Chart.defaults.plugins.tooltip.bodyColor = '#fafaf7';
+Chart.defaults.plugins.tooltip.cornerRadius = 2;
+
+const charts = {};
+
+/* ===== Log parsing ===== */
+function parseLog(text) {
+  const lines = text.split('\n');
+  const rows = [];
+  // Regex: "step   500 | train 5.1030 | val 3.7570 | lr 3.00e-04 | 380.6ms/step"
+  const re = /step\s+(\d+)\s*\|\s*train\s+([\d.]+)\s*\|\s*val\s+([\d.]+)\s*\|\s*lr\s+([\d.eE+-]+)\s*\|\s*([\d.]+)ms/;
+  for (const ln of lines) {
+    const m = ln.match(re);
+    if (m) {
+      rows.push({
+        step: parseInt(m[1]),
+        train: parseFloat(m[2]),
+        val: parseFloat(m[3]),
+        lr: parseFloat(m[4]),
+        ms: parseFloat(m[5]),
+      });
+    }
+  }
+  return rows;
+}
+
+/* ===== Render ===== */
+function render(rows) {
+  if (rows.length === 0) {
+    document.getElementById('status').textContent = 'No valid log lines found. Expected format: "step N | train X | val Y | lr Z | Nms/step"';
+    document.getElementById('status').style.color = '#a03c1c';
+    return;
+  }
+
+  document.getElementById('status').textContent = `✓ Parsed ${rows.length} evaluation points (steps ${rows[0].step}–${rows[rows.length-1].step})`;
+  document.getElementById('status').style.color = '#3d7a4e';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('summary').classList.remove('hidden');
+  document.querySelectorAll('.chart-section').forEach(el => el.classList.add('visible'));
+
+  renderSummary(rows);
+  renderLossChart(rows);
+  renderGapChart(rows);
+  renderLrChart(rows);
+  renderPplChart(rows);
+  writeVerdicts(rows);
+}
+
+function renderSummary(rows) {
+  const last = rows[rows.length - 1];
+  const first = rows[0];
+  const totalSteps = last.step;
+  const lossDrop = first.train - last.train;
+  const finalPpl = Math.exp(last.val);
+  const avgMs = rows.reduce((s, r) => s + r.ms, 0) / rows.length;
+  const totalMin = (totalSteps * avgMs / 1000 / 60).toFixed(1);
+
+  document.getElementById('summary').innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Steps</div>
+      <div class="stat-value">${totalSteps.toLocaleString()}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Final train loss</div>
+      <div class="stat-value">${last.train.toFixed(3)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Final val loss</div>
+      <div class="stat-value ${last.val < 2.0 ? 'good' : ''}">${last.val.toFixed(3)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Final perplexity</div>
+      <div class="stat-value ${finalPpl < 7 ? 'good' : ''}">${finalPpl.toFixed(2)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Loss reduction</div>
+      <div class="stat-value">${lossDrop.toFixed(2)}<em>from start</em></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg step time</div>
+      <div class="stat-value">${avgMs.toFixed(0)}<em>ms</em></div>
+    </div>
+  `;
+}
+
+function killChart(key) {
+  if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+}
+
+function renderLossChart(rows) {
+  killChart('loss');
+  const ctx = document.getElementById('lossChart').getContext('2d');
+  charts.loss = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.step),
+      datasets: [
+        {
+          label: 'train loss',
+          data: rows.map(r => r.train),
+          borderColor: '#e2623b',
+          backgroundColor: 'rgba(226,98,59,0.08)',
+          tension: 0.25,
+          fill: false,
+        },
+        {
+          label: 'val loss',
+          data: rows.map(r => r.val),
+          borderColor: '#245e8a',
+          backgroundColor: 'rgba(36,94,138,0.08)',
+          tension: 0.25,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { title: { display: true, text: 'training step', color: '#6e6c66' }, grid: { color: '#efece1' } },
+        y: { title: { display: true, text: 'cross-entropy loss', color: '#6e6c66' }, grid: { color: '#efece1' } },
+      },
+    },
+  });
+}
+
+function renderGapChart(rows) {
+  killChart('gap');
+  const ctx = document.getElementById('gapChart').getContext('2d');
+  const gaps = rows.map(r => r.train - r.val);
+  charts.gap = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.step),
+      datasets: [
+        {
+          label: 'train − val',
+          data: gaps,
+          borderColor: '#3d7a4e',
+          backgroundColor: 'rgba(61,122,78,0.12)',
+          tension: 0.25,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { title: { display: true, text: 'training step', color: '#6e6c66' }, grid: { color: '#efece1' } },
+        y: {
+          title: { display: true, text: 'generalization gap', color: '#6e6c66' },
+          grid: { color: '#efece1' },
+          suggestedMin: -0.3,
+          suggestedMax: 0.3,
+        },
+      },
+    },
+  });
+}
+
+function renderLrChart(rows) {
+  killChart('lr');
+  const ctx = document.getElementById('lrChart').getContext('2d');
+  charts.lr = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.step),
+      datasets: [
+        {
+          label: 'learning rate',
+          data: rows.map(r => r.lr),
+          borderColor: '#a03c1c',
+          backgroundColor: 'rgba(160,60,28,0.1)',
+          tension: 0.3,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => 'lr: ' + ctx.parsed.y.toExponential(2),
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: 'training step', color: '#6e6c66' }, grid: { color: '#efece1' } },
+        y: {
+          title: { display: true, text: 'learning rate', color: '#6e6c66' },
+          grid: { color: '#efece1' },
+          ticks: { callback: (v) => v.toExponential(1) },
+        },
+      },
+    },
+  });
+}
+
+function renderPplChart(rows) {
+  killChart('ppl');
+  const ctx = document.getElementById('pplChart').getContext('2d');
+  charts.ppl = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.step),
+      datasets: [
+        {
+          label: 'train ppl',
+          data: rows.map(r => Math.exp(r.train)),
+          borderColor: '#e2623b',
+          backgroundColor: 'rgba(226,98,59,0.08)',
+          tension: 0.25,
+          fill: false,
+        },
+        {
+          label: 'val ppl',
+          data: rows.map(r => Math.exp(r.val)),
+          borderColor: '#245e8a',
+          backgroundColor: 'rgba(36,94,138,0.08)',
+          tension: 0.25,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { title: { display: true, text: 'training step', color: '#6e6c66' }, grid: { color: '#efece1' } },
+        y: {
+          title: { display: true, text: 'perplexity (log scale)', color: '#6e6c66' },
+          type: 'logarithmic',
+          grid: { color: '#efece1' },
+        },
+      },
+    },
+  });
+}
+
+/* ===== Auto-written verdicts ===== */
+function writeVerdicts(rows) {
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  const gaps = rows.map(r => r.train - r.val);
+  const maxGap = Math.max(...gaps);
+  const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+  const finalPpl = Math.exp(last.val);
+  const lrMax = Math.max(...rows.map(r => r.lr));
+  const lrMin = Math.min(...rows.map(r => r.lr));
+
+  // Loss verdict
+  let lossMsg = '';
+  if (last.val < 1.8) {
+    lossMsg = `Your model has learned a lot. Val loss dropped from ${first.val.toFixed(2)} to ${last.val.toFixed(2)}, a solid descent with no instabilities. The curve has the classic transformer shape: steep early descent, gradual polish phase.`;
+  } else if (last.val < 2.5) {
+    lossMsg = `Training is working. Val loss dropped from ${first.val.toFixed(2)} to ${last.val.toFixed(2)}. The model has learned real patterns; more training or data would likely continue improving it.`;
+  } else {
+    lossMsg = `The model is learning but hasn't converged. Val loss is still at ${last.val.toFixed(2)}, well above the point where outputs become coherent. More training steps would help.`;
+  }
+  document.getElementById('loss-verdict').textContent = lossMsg;
+
+  // Gap verdict
+  let gapMsg = '';
+  if (maxGap < 0.15) {
+    gapMsg = `Generalization looks healthy. The train-val gap stays near zero throughout — often val is even lower than train, which is normal early on. No overfitting signals.`;
+  } else if (maxGap < 0.3) {
+    gapMsg = `A modest gap has opened up (max ${maxGap.toFixed(2)}). This is within the normal range; the model is learning general patterns with mild memorization.`;
+  } else {
+    gapMsg = `The train-val gap has grown to ${maxGap.toFixed(2)} — the model is starting to memorize. Consider stopping earlier, increasing dropout, or adding more training data.`;
+  }
+  document.getElementById('gap-verdict').textContent = gapMsg;
+
+  // LR verdict
+  const lrMsg = `Learning rate ranged from ${lrMin.toExponential(1)} up to a peak of ${lrMax.toExponential(1)}, then decayed. The shape tells the whole strategy: careful warmup, bold middle, gentle end.`;
+  document.getElementById('lr-verdict').textContent = lrMsg;
+
+  // PPL verdict
+  const startPpl = Math.exp(first.val);
+  const ratio = (startPpl / finalPpl).toFixed(0);
+  const pplMsg = `Perplexity went from ${startPpl.toFixed(0)} down to ${finalPpl.toFixed(1)} — the model narrowed its predictions by a factor of ${ratio}×. Every halving represents a major improvement in how confidently the model identifies the right next token.`;
+  document.getElementById('ppl-verdict').textContent = pplMsg;
+}
+
+/* ===== Sample log for demo ===== */
+const SAMPLE_LOG = `step    500 | train 5.1030 | val 3.7570 | lr 3.00e-04 | 380.6ms/step
+step   1000 | train 3.4063 | val 3.0372 | lr 3.00e-04 | 324.0ms/step
+step   1500 | train 2.9398 | val 2.6957 | lr 2.99e-04 | 296.9ms/step
+step   2000 | train 2.6824 | val 2.4885 | lr 2.98e-04 | 289.2ms/step
+step   2500 | train 2.5084 | val 2.3481 | lr 2.96e-04 | 285.8ms/step
+step   3000 | train 2.3967 | val 2.2525 | lr 2.93e-04 | 285.8ms/step
+step   3500 | train 2.3150 | val 2.1819 | lr 2.90e-04 | 283.8ms/step
+step   4000 | train 2.2540 | val 2.1294 | lr 2.87e-04 | 282.5ms/step
+step   4500 | train 2.2017 | val 2.0894 | lr 2.83e-04 | 281.8ms/step
+step   5000 | train 2.1651 | val 2.0579 | lr 2.78e-04 | 281.8ms/step
+step   5500 | train 2.1330 | val 2.0227 | lr 2.73e-04 | 283.5ms/step
+step   6000 | train 2.1014 | val 1.9897 | lr 2.68e-04 | 281.2ms/step
+step   6500 | train 2.0833 | val 1.9636 | lr 2.62e-04 | 281.0ms/step
+step   7000 | train 2.0512 | val 1.9378 | lr 2.56e-04 | 280.9ms/step
+step   7500 | train 2.0329 | val 1.9076 | lr 2.49e-04 | 280.9ms/step
+step   8000 | train 2.0170 | val 1.9152 | lr 2.42e-04 | 281.6ms/step
+step   8500 | train 1.9953 | val 1.9079 | lr 2.35e-04 | 281.0ms/step
+step   9000 | train 1.9824 | val 1.8547 | lr 2.27e-04 | 281.4ms/step
+step   9500 | train 1.9675 | val 1.8674 | lr 2.20e-04 | 281.1ms/step
+step  10000 | train 1.9491 | val 1.8560 | lr 2.12e-04 | 281.1ms/step
+step  10500 | train 1.9403 | val 1.8382 | lr 2.03e-04 | 282.1ms/step
+step  11000 | train 1.9298 | val 1.8417 | lr 1.95e-04 | 281.0ms/step
+step  11500 | train 1.9202 | val 1.8222 | lr 1.87e-04 | 280.5ms/step
+step  12000 | train 1.9012 | val 1.8076 | lr 1.78e-04 | 281.3ms/step
+step  12500 | train 1.8971 | val 1.7922 | lr 1.69e-04 | 280.6ms/step
+step  13000 | train 1.8892 | val 1.7911 | lr 1.61e-04 | 280.7ms/step
+step  13500 | train 1.8784 | val 1.7964 | lr 1.52e-04 | 280.6ms/step
+step  14000 | train 1.8677 | val 1.7822 | lr 1.43e-04 | 280.5ms/step
+step  14500 | train 1.8642 | val 1.7602 | lr 1.35e-04 | 281.1ms/step
+step  15000 | train 1.8536 | val 1.7632 | lr 1.27e-04 | 280.6ms/step
+step  15500 | train 1.8468 | val 1.7624 | lr 1.18e-04 | 281.1ms/step
+step  16000 | train 1.8317 | val 1.7499 | lr 1.10e-04 | 280.8ms/step
+step  16500 | train 1.8303 | val 1.7236 | lr 1.03e-04 | 280.9ms/step
+step  17000 | train 1.8266 | val 1.7314 | lr 9.50e-05 | 281.5ms/step
+step  17500 | train 1.8206 | val 1.7289 | lr 8.78e-05 | 280.7ms/step
+step  18000 | train 1.8096 | val 1.7242 | lr 8.08e-05 | 281.8ms/step
+step  18500 | train 1.8043 | val 1.7276 | lr 7.43e-05 | 280.8ms/step
+step  19000 | train 1.7997 | val 1.7204 | lr 6.80e-05 | 282.2ms/step
+step  19500 | train 1.7920 | val 1.7106 | lr 6.22e-05 | 281.1ms/step
+step  20000 | train 1.7851 | val 1.7073 | lr 5.68e-05 | 280.7ms/step
+step  20500 | train 1.7895 | val 1.7026 | lr 5.19e-05 | 281.6ms/step
+step  21000 | train 1.7818 | val 1.6902 | lr 4.74e-05 | 280.9ms/step`;
+
+/* ===== Wire up buttons ===== */
+document.getElementById('parseBtn').addEventListener('click', () => {
+  const rows = parseLog(document.getElementById('input').value);
+  render(rows);
+});
+
+document.getElementById('sampleBtn').addEventListener('click', () => {
+  document.getElementById('input').value = SAMPLE_LOG;
+  const rows = parseLog(SAMPLE_LOG);
+  render(rows);
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  document.getElementById('input').value = '';
+  document.getElementById('summary').classList.add('hidden');
+  document.querySelectorAll('.chart-section').forEach(el => el.classList.remove('visible'));
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('status').textContent = 'Waiting for input…';
+  document.getElementById('status').style.color = '#6e6c66';
+});
+</script>
+</body>
+</html>

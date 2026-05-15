@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Watching It Learn — Episode 05</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #1E5A7E; --blue-dark: #0F3D5C; --orange: #D87545;
+    --orange-light: #fae0d0; --teal: #1d9e75; --rose: #d4537e;
+    --ink: #1a1a1a; --muted: #6b6b6b; --faint: #a8a8a8;
+    --line: #e5e5e5; --bg: #faf8f3; --panel: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg); color: var(--ink);
+    font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 44px 28px 90px; }
+
+  header { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+  .kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Newsreader', serif; font-size: clamp(30px,4vw,44px);
+    font-weight: 500; line-height: 1.05; letter-spacing: -0.025em; margin-bottom: 12px;
+  }
+  h1 em { color: var(--orange); font-style: italic; }
+  .lede {
+    font-family: 'Newsreader', serif; font-size: 17px; line-height: 1.55;
+    color: var(--muted); max-width: 62ch;
+  }
+
+  /* The main interactive panel */
+  .stage {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 28px 32px; margin-bottom: 22px;
+  }
+
+  /* Loss curve area */
+  .curve-wrap { position: relative; margin-bottom: 8px; }
+  svg.curve { display: block; width: 100%; height: auto; }
+
+  /* The step scrubber */
+  .scrubber-row {
+    display: flex; align-items: center; gap: 16px; margin-top: 18px;
+    padding-top: 18px; border-top: 1px solid var(--line);
+  }
+  .scrubber-row label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    white-space: nowrap;
+  }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; background: var(--line); border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--orange); cursor: pointer;
+    border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--orange); cursor: pointer;
+    border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .step-readout {
+    font-family: 'JetBrains Mono', monospace; font-size: 14px;
+    font-weight: 500; color: var(--ink); white-space: nowrap;
+    min-width: 130px; text-align: right;
+  }
+
+  /* Checkpoint snap buttons */
+  .snap-row {
+    display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .snap-btn {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 100px;
+    padding: 6px 14px; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .snap-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .snap-btn.active { background: var(--orange); color: white; border-color: var(--orange); }
+
+  /* Readout cards below the curve */
+  .readouts {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px;
+  }
+  .readout-card {
+    background: var(--bg); border-radius: 4px; padding: 16px 18px;
+  }
+  .readout-card .rc-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .readout-card .rc-value {
+    font-size: 28px; font-weight: 300; color: var(--ink); letter-spacing: -0.02em;
+  }
+  .readout-card .rc-value.accent { color: var(--orange); }
+  .readout-card .rc-sub {
+    font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4;
+  }
+
+  /* The sample output box */
+  .sample-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 26px 30px; margin-bottom: 22px;
+  }
+  .sample-box .sb-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .sample-box .sb-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  }
+  .sample-box .sb-step {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--orange); font-weight: 500;
+  }
+  .sample-text {
+    font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.6;
+    color: var(--ink); min-height: 130px;
+  }
+  .sample-text .prompt-part { color: var(--muted); font-style: italic; }
+  .sample-text .gen-part { color: var(--ink); }
+
+  /* Quality tag */
+  .quality-tag {
+    display: inline-block; margin-top: 16px;
+    padding: 4px 12px; border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
+  }
+  .quality-tag.noise   { background: #f0f0f0; color: #888; }
+  .quality-tag.letters { background: #fce4d6; color: #b5651d; }
+  .quality-tag.words   { background: #fae0d0; color: #a8451a; }
+  .quality-tag.grammar { background: #d8e7e0; color: #1d7a56; }
+  .quality-tag.stories { background: #d4e8d4; color: #2d7a2d; }
+
+  /* Explanatory sections */
+  .section {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 26px 30px; margin-bottom: 18px;
+  }
+  .section h2 {
+    font-family: 'Newsreader', serif; font-size: 22px; font-weight: 500;
+    letter-spacing: -0.015em; margin-bottom: 14px;
+  }
+  .section p {
+    font-size: 14px; line-height: 1.6; color: var(--ink); margin-bottom: 10px;
+  }
+  .section p:last-child { margin-bottom: 0; }
+  .section strong { font-weight: 600; }
+  .section em { color: var(--orange); font-style: italic; }
+
+  .callout {
+    background: var(--orange-light); border-left: 3px solid var(--orange);
+    padding: 13px 17px; border-radius: 0 3px 3px 0;
+    font-family: 'Newsreader', serif; font-size: 15px; line-height: 1.5;
+    color: var(--ink); margin-top: 14px;
+  }
+  .callout strong { font-weight: 600; }
+
+  .footer-note {
+    margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line);
+    font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 70ch;
+  }
+  .footer-note strong { color: var(--ink); }
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: rgba(30,90,126,0.1); color: var(--blue);
+    padding: 1px 5px; border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="kicker">Episode 05 · Visualization</div>
+    <h1>Watching it <em>learn</em>.</h1>
+    <p class="lede">
+      Drag the scrubber through 25,000 training steps. Watch the loss fall — and watch the
+      same model's output transform from random noise into a coherent children's story.
+      Same 12 million parameters throughout. Only their values change.
+    </p>
+  </header>
+
+  <!-- THE MAIN STAGE: loss curve + scrubber -->
+  <div class="stage">
+
+    <div class="curve-wrap">
+      <svg class="curve" viewBox="0 0 1000 320" id="curveSvg">
+        <!-- Grid lines and axis labels are drawn by JS -->
+      </svg>
+    </div>
+
+    <!-- Scrubber -->
+    <div class="scrubber-row">
+      <label>Training step</label>
+      <input type="range" id="scrubber" min="0" max="25000" value="0" step="100" />
+      <div class="step-readout" id="stepReadout">step 0</div>
+    </div>
+
+    <!-- Checkpoint snap buttons -->
+    <div class="snap-row" id="snapRow">
+      <!-- buttons injected by JS -->
+    </div>
+
+    <!-- Readout cards -->
+    <div class="readouts">
+      <div class="readout-card">
+        <div class="rc-label">Training loss</div>
+        <div class="rc-value accent" id="lossValue">8.32</div>
+        <div class="rc-sub" id="lossSub">As confused as possible</div>
+      </div>
+      <div class="readout-card">
+        <div class="rc-label">Perplexity</div>
+        <div class="rc-value" id="pplValue">4096</div>
+        <div class="rc-sub" id="pplSub">Choosing among 4,096 equal options</div>
+      </div>
+      <div class="readout-card">
+        <div class="rc-label">Learning rate</div>
+        <div class="rc-value" id="lrValue">3e-7</div>
+        <div class="rc-sub" id="lrSub">Warmup phase</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SAMPLE OUTPUT BOX -->
+  <div class="sample-box">
+    <div class="sb-head">
+      <div class="sb-title">Model output — prompt: "Once upon a time"</div>
+      <div class="sb-step" id="sampleStep">step 0</div>
+    </div>
+    <div class="sample-text" id="sampleText"></div>
+    <div class="quality-tag noise" id="qualityTag">pure noise</div>
+  </div>
+
+  <!-- EXPLANATORY SECTIONS -->
+  <div class="section">
+    <h2>Reading the loss curve</h2>
+    <p>
+      The curve has the shape every healthy training run shares: a <strong>steep drop early</strong>,
+      then a <strong>long, slow decline</strong>. In the first 1,000 steps the model goes from
+      "completely random" to "knows basic letter and word patterns" — that's the cliff at the
+      left. After that, every further improvement is harder won.
+    </p>
+    <p>
+      The two lines are <strong>training loss</strong> (orange) and <strong>validation loss</strong>
+      (blue). They stay close together the whole run — that's the sign of healthy learning. If the
+      blue line had peeled away and climbed while orange kept falling, that would be
+      <em>overfitting</em>: the model memorizing its training data instead of learning general patterns.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>What is perplexity?</h2>
+    <p>
+      Loss is precise but not intuitive. <strong>Perplexity</strong> is the same information in a
+      form you can feel: it's roughly "how many equally-likely options is the model choosing
+      between?" Perplexity is just <code>e^loss</code>.
+    </p>
+    <p>
+      At step 0, loss is 8.32 and perplexity is 4,096 — the model is choosing uniformly among all
+      4,096 vocabulary tokens. It has no idea. By step 25,000, loss is ~1.7 and perplexity is
+      around 5–6 — the model has narrowed "what comes next" down to a small handful of sensible
+      options. That's the whole story of training, in one number.
+    </p>
+    <div class="callout">
+      A perplexity of 5 means the model is about as uncertain as if it were picking from
+      <strong>5 equally likely words</strong> — a dramatic improvement from 4,096, and good enough
+      to produce coherent text.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>The five stages of learning to write</h2>
+    <p>
+      Scrub slowly through the run and the output passes through five recognizable stages. They
+      always appear in this order — it's the same progression every language model goes through,
+      from the smallest to the largest.
+    </p>
+    <p>
+      <strong>Noise → Letters → Words → Grammar → Stories.</strong> First random tokens. Then
+      plausible letter clusters and the most common short words. Then real words in roughly the
+      right order. Then mostly-correct grammar and sentence structure. Finally, coherent short
+      narratives with characters and events. The model is never <em>told</em> these stages — they
+      emerge on their own, as a natural consequence of getting better at "predict the next token."
+    </p>
+  </div>
+
+  <div class="footer-note">
+    <strong>Note on the data shown here.</strong> The loss curve and sample outputs in this
+    visualization are representative — they show the shape and progression of a typical run for
+    this model size on TinyStories. Your actual <code>checkpoint.pt</code> outputs will differ in
+    the exact words, but the five-stage progression and the overall curve shape will be the same.
+    To show your real outputs, replace the <code>SAMPLES</code> array in this file with text
+    generated from your own checkpoints.
+  </div>
+
+</div>
+
+<script>
+  // ───────────────────────────────────────────────────────────────────────────
+  // DATA — the loss curve and the sample outputs at each checkpoint.
+  // Replace SAMPLES with real generations from your own checkpoints.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const MAX_STEP = 25000;
+  const WARMUP = 1000;
+  const PEAK_LR = 3e-4;
+  const MIN_LR = 3e-5;
+
+  // Generate a realistic-shaped loss curve.
+  // Train and val are close, with train slightly noisier.
+  function lossAtStep(step) {
+    // Smooth underlying curve: exponential-ish decay from 8.32 toward ~1.65
+    const floor = 1.65;
+    const start = 8.32;
+    // decay constant tuned so it drops fast then flattens
+    const decayed = floor + (start - floor) * Math.exp(-step / 4200);
+    return decayed;
+  }
+
+  function learningRateAtStep(step) {
+    if (step < WARMUP) {
+      return PEAK_LR * (step + 1) / WARMUP;
+    }
+    const progress = (step - WARMUP) / (MAX_STEP - WARMUP);
+    const cosineFactor = 0.5 * (1.0 + Math.cos(Math.PI * progress));
+    return MIN_LR + cosineFactor * (PEAK_LR - MIN_LR);
+  }
+
+  // Checkpoint sample outputs — the five stages.
+  // Each has: step, the generated text, a quality class, and a quality label.
+  const SAMPLES = [
+    {
+      step: 0,
+      prompt: "Once upon a time",
+      gen: " rable consec distrib theid Dest pliant Marg shnetwork XYZ rang prism unct grov bल wem.",
+      cls: "noise",
+      label: "pure noise"
+    },
+    {
+      step: 1000,
+      prompt: "Once upon a time",
+      gen: " the the a was wery to and the litle the boy hpppy wit her the the and to play.",
+      cls: "letters",
+      label: "letter clusters & common words"
+    },
+    {
+      step: 5000,
+      prompt: "Once upon a time",
+      gen: " there was a little girl. She want to play with the ball. The dog run fast and happy day.",
+      cls: "words",
+      label: "real words, rough order"
+    },
+    {
+      step: 15000,
+      prompt: "Once upon a time",
+      gen: " there was a little girl named Lily. She found a ball in the garden and wanted to play with it.",
+      cls: "grammar",
+      label: "mostly-correct grammar"
+    },
+    {
+      step: 25000,
+      prompt: "Once upon a time",
+      gen: " there was a little girl named Lily. She found a red ball in the garden. She was very happy and played with it all day until the sun went down.",
+      cls: "stories",
+      label: "coherent short story"
+    },
+  ];
+
+  const CHECKPOINTS = SAMPLES.map(s => s.step);
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // DRAW THE LOSS CURVE
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const svg = document.getElementById('curveSvg');
+  const W = 1000, H = 320;
+  const PAD_L = 56, PAD_R = 24, PAD_T = 20, PAD_B = 40;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+
+  // Loss axis: 0 to 9
+  const LOSS_MIN = 1, LOSS_MAX = 9;
+
+  function stepToX(step) {
+    return PAD_L + (step / MAX_STEP) * plotW;
+  }
+  function lossToY(loss) {
+    return PAD_T + (1 - (loss - LOSS_MIN) / (LOSS_MAX - LOSS_MIN)) * plotH;
+  }
+
+  function buildCurve() {
+    let svgContent = '';
+
+    // ── Grid lines (horizontal, per loss value) ──
+    for (let loss = LOSS_MIN; loss <= LOSS_MAX; loss += 1) {
+      const y = lossToY(loss);
+      svgContent += `<line x1="${PAD_L}" y1="${y}" x2="${W - PAD_R}" y2="${y}"
+                     stroke="#ebebeb" stroke-width="1" />`;
+      svgContent += `<text x="${PAD_L - 10}" y="${y + 4}" text-anchor="end"
+                     style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #a8a8a8;">${loss}.0</text>`;
+    }
+
+    // ── X-axis labels (every 5000 steps) ──
+    for (let step = 0; step <= MAX_STEP; step += 5000) {
+      const x = stepToX(step);
+      svgContent += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${H - PAD_B}"
+                     stroke="#f2f2f2" stroke-width="1" />`;
+      svgContent += `<text x="${x}" y="${H - PAD_B + 18}" text-anchor="middle"
+                     style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #a8a8a8;">${step/1000}k</text>`;
+    }
+
+    // ── Axis titles ──
+    svgContent += `<text x="${PAD_L - 40}" y="${PAD_T + plotH/2}" text-anchor="middle"
+                   transform="rotate(-90, ${PAD_L - 40}, ${PAD_T + plotH/2})"
+                   style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #6b6b6b; letter-spacing: 0.1em;">LOSS</text>`;
+
+    // ── Build the train loss path (slightly noisy) ──
+    let trainPath = '';
+    let valPath = '';
+    for (let step = 0; step <= MAX_STEP; step += 100) {
+      const baseLoss = lossAtStep(step);
+      // Train loss: add small deterministic noise
+      const noise = Math.sin(step * 0.03) * 0.08 + Math.sin(step * 0.011) * 0.05;
+      const trainLoss = baseLoss + noise;
+      // Val loss: smoother, very slightly higher
+      const valLoss = baseLoss + 0.04;
+
+      const tx = stepToX(step);
+      const ty = lossToY(trainLoss);
+      const vy = lossToY(valLoss);
+
+      trainPath += (step === 0 ? 'M' : 'L') + tx.toFixed(1) + ',' + ty.toFixed(1) + ' ';
+      valPath += (step === 0 ? 'M' : 'L') + tx.toFixed(1) + ',' + vy.toFixed(1) + ' ';
+    }
+
+    // Validation line (blue, drawn first so it sits behind)
+    svgContent += `<path d="${valPath}" fill="none" stroke="#1E5A7E" stroke-width="2" opacity="0.55" />`;
+    // Training line (orange)
+    svgContent += `<path d="${trainPath}" fill="none" stroke="#D87545" stroke-width="2" />`;
+
+    // ── Checkpoint markers ──
+    CHECKPOINTS.forEach(step => {
+      const x = stepToX(step);
+      const y = lossToY(lossAtStep(step));
+      svgContent += `<circle cx="${x}" cy="${y}" r="4" fill="white" stroke="#D87545" stroke-width="2" />`;
+    });
+
+    // ── The moving scrubber line (updated dynamically) ──
+    svgContent += `<line id="scrubLine" x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${H - PAD_B}"
+                   stroke="#1a1a1a" stroke-width="1.5" stroke-dasharray="3,3" />`;
+    svgContent += `<circle id="scrubDot" cx="${PAD_L}" cy="${lossToY(8.32)}" r="6"
+                   fill="#D87545" stroke="white" stroke-width="2.5" />`;
+
+    // ── Legend ──
+    svgContent += `
+      <g transform="translate(${W - PAD_R - 180}, ${PAD_T + 8})">
+        <line x1="0" y1="0" x2="20" y2="0" stroke="#D87545" stroke-width="2" />
+        <text x="26" y="4" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #6b6b6b;">train loss</text>
+        <line x1="100" y1="0" x2="120" y2="0" stroke="#1E5A7E" stroke-width="2" opacity="0.55" />
+        <text x="126" y="4" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #6b6b6b;">val loss</text>
+      </g>
+    `;
+
+    svg.innerHTML = svgContent;
+  }
+
+  buildCurve();
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // INTERACTIVITY
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const scrubber = document.getElementById('scrubber');
+  const stepReadout = document.getElementById('stepReadout');
+  const lossValue = document.getElementById('lossValue');
+  const lossSub = document.getElementById('lossSub');
+  const pplValue = document.getElementById('pplValue');
+  const pplSub = document.getElementById('pplSub');
+  const lrValue = document.getElementById('lrValue');
+  const lrSub = document.getElementById('lrSub');
+  const sampleText = document.getElementById('sampleText');
+  const sampleStep = document.getElementById('sampleStep');
+  const qualityTag = document.getElementById('qualityTag');
+
+  // Find which sample to show for a given step (the most recent checkpoint at or before it)
+  function sampleForStep(step) {
+    let chosen = SAMPLES[0];
+    for (const s of SAMPLES) {
+      if (step >= s.step) chosen = s;
+    }
+    return chosen;
+  }
+
+  function lossSubText(loss) {
+    if (loss > 7) return "As confused as possible";
+    if (loss > 4) return "Learning basic patterns";
+    if (loss > 2.5) return "Words are forming";
+    if (loss > 1.9) return "Grammar is emerging";
+    return "Writing coherent text";
+  }
+
+  function update(step) {
+    // ── Readouts ──
+    const loss = lossAtStep(step);
+    const ppl = Math.exp(loss);
+    const lr = learningRateAtStep(step);
+
+    stepReadout.textContent = `step ${step.toLocaleString()}`;
+    lossValue.textContent = loss.toFixed(2);
+    lossSub.textContent = lossSubText(loss);
+
+    pplValue.textContent = ppl < 100 ? ppl.toFixed(1) : Math.round(ppl).toLocaleString();
+    if (ppl > 1000) pplSub.textContent = "Choosing among thousands of options";
+    else if (ppl > 50) pplSub.textContent = "Narrowed to dozens of options";
+    else if (ppl > 10) pplSub.textContent = "Down to a dozen-ish options";
+    else pplSub.textContent = "Just a handful of sensible options";
+
+    lrValue.textContent = lr.toExponential(1).replace('e', 'e');
+    lrSub.textContent = step < WARMUP ? "Warmup phase" : "Cosine decay phase";
+
+    // ── Scrubber line on the curve ──
+    const x = stepToX(step);
+    const y = lossToY(loss);
+    const scrubLine = document.getElementById('scrubLine');
+    const scrubDot = document.getElementById('scrubDot');
+    if (scrubLine) { scrubLine.setAttribute('x1', x); scrubLine.setAttribute('x2', x); }
+    if (scrubDot) { scrubDot.setAttribute('cx', x); scrubDot.setAttribute('cy', y); }
+
+    // ── Sample output ──
+    const sample = sampleForStep(step);
+    sampleText.innerHTML =
+      `<span class="prompt-part">${sample.prompt}</span>` +
+      `<span class="gen-part">${sample.gen}</span>`;
+    sampleStep.textContent = `step ${sample.step.toLocaleString()}`;
+    qualityTag.textContent = sample.label;
+    qualityTag.className = 'quality-tag ' + sample.cls;
+
+    // ── Snap buttons active state ──
+    document.querySelectorAll('.snap-btn').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.step) === sample.step);
+    });
+  }
+
+  scrubber.addEventListener('input', e => update(parseInt(e.target.value)));
+
+  // ── Build checkpoint snap buttons ──
+  const snapRow = document.getElementById('snapRow');
+  SAMPLES.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'snap-btn';
+    btn.dataset.step = s.step;
+    btn.textContent = `step ${s.step.toLocaleString()}`;
+    btn.addEventListener('click', () => {
+      scrubber.value = s.step;
+      update(s.step);
+    });
+    snapRow.appendChild(btn);
+  });
+
+  // Initial render
+  update(0);
+</script>
+
+</body>
+</html>
