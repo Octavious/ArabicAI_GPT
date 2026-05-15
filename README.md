@@ -50,16 +50,13 @@ If you want to dive in:
 
 ```
 build-gpt-from-scratch/
-├── README.md                          ← you are here
-├── episode-01-setup/                  ← env setup, GPU verification
-├── episode-02-data-and-tokenizer/     ← TinyStories + custom BPE
-├── episode-03-architecture-theory/    ← intuition, no code
-├── episode-04-building-the-model/     ← model.py from scratch
-├── episode-05-training/               ← train.py + optimization
-├── episode-06-watching-it-learn/      ← reading training curves
-├── episode-07-generation/             ← inference + web UI
-├── episode-08-deploy-huggingface/     ← share with the world
-└── final-project/                     ← complete combined codebase
+├── README.md                                ← you are here
+├── episode-01-setup/                        ← env setup, GPU verification
+├── episode-02-data-and-tokenizer/           ← TinyStories + custom BPE
+├── episode-03-architecture-theory/          ← intuition, no code
+├── episode-04-building-the-model/           ← model.py from scratch
+├── episode-05-training/                     ← train.py + optimization
+└── episode-06-generation-and-deployment/    ← inference + web UI and share with the world
 ```
 
 Each episode folder contains its own README with the full written walkthrough of that video, plus the code files built during it.
