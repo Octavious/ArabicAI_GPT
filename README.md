@@ -28,12 +28,10 @@ You need basic Python familiarity. No ML background required; we build up from t
 |---|---------|--------|------|
 | 01 | [Setup — environment and GPU verification](./episode-01-setup/) | ✅ Released | `GPUVerification.py` |
 | 02 | [Data and tokenization — choosing what to feed the model](./episode-02-data-and-tokenizer/) | ✅ Released  | `train_tokenizer.py`, `prepare_data.py` |
-| 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | 🎬 Recording | — |
-| 04 | [Building the model — attention, FFN, blocks](./episode-04-building-the-model/) | 📝 Planned | `model.py` |
-| 05 | [Training — the optimization story](./episode-05-training/) | 📝 Planned | `train.py` |
-| 06 | [Watching it learn — interpreting training curves](./episode-06-watching-it-learn/) | 📝 Planned | — |
-| 07 | [Generation — sampling and a web UI](./episode-07-generation/) | 📝 Planned | `generate.py`, `server.py` |
-| 08 | [Deploy — sharing your model on Hugging Face](./episode-08-deploy-huggingface/) | 📝 Planned | — |
+| 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | ✅ Released 🎬 Recording | — |
+| 04 | [Building the model — attention, FFN, blocks](./episode-04-building-the-model/) | ✅ Released  | `model.py` |
+| 05 | [Training — the optimization story](./episode-05-training/) | ✅ Released  | `train.py` |
+| 06 | [Generation & Deployment — sampling and a web UI](./episode-07-generation/) | 📝 Planned | `generate.py`, `server.py` |
 
 > **Status legend:** ✅ Released · 🎬 Recording · 📝 Planned · 🚧 Coming soon
 
