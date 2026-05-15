@@ -31,7 +31,7 @@ You need basic Python familiarity. No ML background required; we build up from t
 | 03 | [What is a transformer, really? (theory only)](./episode-03-architecture-theory/) | ✅ Released 🎬 Recording | — |
 | 04 | [Building the model — attention, FFN, blocks](./episode-04-building-the-model/) | ✅ Released  | `model.py` |
 | 05 | [Training — the optimization story](./episode-05-training/) | ✅ Released  | `train.py` |
-| 06 | [Generation & Deployment — sampling and a web UI](./episode-07-generation/) | 📝 Planned | `generate.py`, `server.py` |
+| 06 | [Generation & Deployment — sampling and a web UI](./episode-06-generation-and-deployment/) | 📝 Planned | `generate.py`, `server.py` |
 
 > **Status legend:** ✅ Released · 🎬 Recording · 📝 Planned · 🚧 Coming soon
 
