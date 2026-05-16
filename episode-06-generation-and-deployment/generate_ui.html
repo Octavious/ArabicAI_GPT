@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>TinyStories GPT · Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1a1814;
+    --bg-2: #221f1a;
+    --panel: #272420;
+    --ink: #f0ebe0;
+    --muted: #9a948a;
+    --faint: #5a544a;
+    --accent: #e8a94e;
+    --accent-dim: #a67a2f;
+    --rose: #d17f6e;
+    --line: #3a352e;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at top, rgba(232,169,78,0.05), transparent 55%),
+      radial-gradient(ellipse at bottom right, rgba(209,127,110,0.04), transparent 60%);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 56px 28px 120px;
+  }
+
+  header { margin-bottom: 48px; }
+
+  .eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #5a544a;
+    transition: background 0.3s;
+  }
+  .dot.connected { background: #6ba669; box-shadow: 0 0 8px rgba(107,166,105,0.6); }
+  .dot.error { background: #c15a4a; box-shadow: 0 0 8px rgba(193,90,74,0.6); }
+
+  h1 {
+    font-size: clamp(44px, 6vw, 72px);
+    font-weight: 500;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+    margin: 0 0 18px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .lede {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 620px;
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 36px;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .controls {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 28px 26px;
+    border-radius: 4px;
+    position: sticky;
+    top: 32px;
+    height: fit-content;
+  }
+
+  .controls h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+    margin: 0 0 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .field { margin-bottom: 22px; }
+
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field label .value {
+    color: var(--accent);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+
+  textarea, select, input[type=text] {
+    width: 100%;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    line-height: 1.45;
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink);
+    transition: border-color 0.15s;
+  }
+
+  textarea { min-height: 70px; resize: vertical; }
+
+  textarea:focus, select:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  select {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='%239a948a' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 10px;
+    padding-right: 34px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--line);
+    border-radius: 1px;
+    outline: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+  }
+
+  .hint {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--faint);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  button.primary {
+    width: 100%;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 8px;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+
+  button.primary:hover {
+    background: #f0b860;
+    transform: translateY(-1px);
+  }
+
+  button.primary:disabled {
+    background: var(--faint);
+    color: var(--muted);
+    cursor: wait;
+    transform: none;
+  }
+
+  .output-area {
+    min-height: 600px;
+  }
+
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .output-header h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+    margin: 0;
+  }
+
+  .meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--faint);
+  }
+
+  .story {
+    font-size: 21px;
+    line-height: 1.65;
+    color: var(--ink);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    min-height: 400px;
+    padding: 8px 0;
+  }
+
+  .story .prompt-text {
+    color: var(--rose);
+    font-style: italic;
+  }
+
+  .story .generated-text {
+    color: var(--ink);
+  }
+
+  .story .cursor {
+    display: inline-block;
+    width: 3px;
+    height: 1.1em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .empty-state {
+    color: var(--faint);
+    font-style: italic;
+    font-size: 19px;
+    padding: 60px 0;
+    text-align: center;
+  }
+
+  .loader {
+    display: inline-flex;
+    gap: 6px;
+    padding: 40px 0;
+  }
+
+  .loader span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.4s ease-in-out infinite;
+  }
+
+  .loader span:nth-child(2) { animation-delay: 0.2s; }
+  .loader span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  .error {
+    color: #e08a75;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    background: rgba(193,90,74,0.1);
+    padding: 14px 18px;
+    border-left: 3px solid #c15a4a;
+    margin-top: 16px;
+  }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .preset {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 100px;
+    transition: all 0.12s;
+  }
+
+  .preset:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .history {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  .history h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+    margin: 0 0 16px;
+  }
+
+  .history-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: opacity 0.12s;
+  }
+
+  .history-item:hover { opacity: 0.7; }
+
+  .history-item .meta-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--faint);
+    margin-bottom: 4px;
+  }
+
+  .history-item .excerpt {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.5;
+    max-height: 3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eyebrow">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">connecting…</span>
+    </div>
+    <h1>TinyStories <em>GPT</em> · Playground</h1>
+    <p class="lede">
+      Your own 12M-parameter transformer, trained from scratch on two million
+      children's stories. Choose a prompt, turn the dials, and watch it write.
+    </p>
+  </header>
+
+  <div class="layout">
+
+    <aside class="controls">
+      <h2>Parameters</h2>
+
+      <div class="field">
+        <label>Model</label>
+        <div id="modelInfo" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;padding:10px 0 2px;">
+          Loading…
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="prompt">Prompt</label>
+        <textarea id="prompt" rows="2">Once upon a time</textarea>
+        <div class="presets">
+          <button class="preset" data-prompt="Once upon a time">Once upon a time</button>
+          <button class="preset" data-prompt="Lily found a">Lily found a</button>
+          <button class="preset" data-prompt="In the forest, a">In the forest, a</button>
+          <button class="preset" data-prompt="The dragon was">The dragon was</button>
+          <button class="preset" data-prompt="One sunny morning,">One sunny morning,</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="temperature">Temperature <span class="value" id="tempValue">0.80</span></label>
+        <input type="range" id="temperature" min="0.1" max="1.5" step="0.05" value="0.8" />
+        <div class="hint">Lower = predictable. Higher = chaotic.</div>
+      </div>
+
+      <div class="field">
+        <label for="topK">Top-K <span class="value" id="topKValue">40</span></label>
+        <input type="range" id="topK" min="0" max="200" step="1" value="40" />
+        <div class="hint">Restrict sampling to this many candidates. 0 = off.</div>
+      </div>
+
+      <div class="field">
+        <label for="maxTokens">Max tokens <span class="value" id="maxTokensValue">200</span></label>
+        <input type="range" id="maxTokens" min="20" max="500" step="10" value="200" />
+        <div class="hint">How long the story should run.</div>
+      </div>
+	  
+	  <div class="field">
+		<label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+			<input type="checkbox" id="stopAtEos" checked style="width: auto;" />
+			Stop at story end
+		</label>
+	  <div class="hint">Stop generating when the model reaches end-of-story.</div>
+</div>
+
+      <button class="primary" id="generateBtn">Generate story</button>
+    </aside>
+
+    <main class="output-area">
+      <div class="output-header">
+        <h2>Generated</h2>
+        <div class="meta" id="outputMeta"></div>
+      </div>
+
+      <div class="story" id="output">
+        <div class="empty-state">Your story will appear here.</div>
+      </div>
+
+      <div class="history" id="history" style="display: none;">
+        <h3>Recent generations</h3>
+        <div id="historyList"></div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin.startsWith('http')
+  ? window.location.origin
+  : 'http://localhost:5000';
+
+const state = {
+  history: [],
+};
+
+/* ===== Status indicator ===== */
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+function setStatus(state, text) {
+  statusDot.className = 'dot ' + state;
+  statusText.textContent = text;
+}
+
+/* ===== Slider value displays ===== */
+function hookSlider(id, valueId, formatter = (v) => v) {
+  const slider = document.getElementById(id);
+  const display = document.getElementById(valueId);
+  const update = () => { display.textContent = formatter(slider.value); };
+  slider.addEventListener('input', update);
+  update();
+}
+hookSlider('temperature', 'tempValue', (v) => parseFloat(v).toFixed(2));
+hookSlider('topK', 'topKValue', (v) => v === '0' ? 'off' : v);
+hookSlider('maxTokens', 'maxTokensValue');
+
+/* ===== Fetch model info from /info ===== */
+let _modelInfo = {};
+
+async function loadInfo() {
+  try {
+    const res = await fetch(`${API_BASE}/info`);
+    if (!res.ok) throw new Error('server replied ' + res.status);
+    _modelInfo = await res.json();
+    document.getElementById('modelInfo').innerHTML =
+      `step ${_modelInfo.step.toLocaleString()} &nbsp;·&nbsp; ` +
+      `val loss ${_modelInfo.val_loss.toFixed(4)} &nbsp;·&nbsp; ` +
+      `${_modelInfo.device.toUpperCase()}`;
+    setStatus('connected', 'server ready');
+  } catch (err) {
+    setStatus('error', 'server unreachable — start it with: python server.py');
+    document.getElementById('modelInfo').textContent = 'Could not reach server.';
+    console.error(err);
+  }
+}
+
+/* ===== Preset prompt buttons ===== */
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('prompt').value = btn.dataset.prompt;
+  });
+});
+
+/* ===== Generation ===== */
+const outputEl = document.getElementById('output');
+const metaEl = document.getElementById('outputMeta');
+const generateBtn = document.getElementById('generateBtn');
+
+async function generate() {
+  const payload = {
+    prompt: document.getElementById('prompt').value,
+    temperature: parseFloat(document.getElementById('temperature').value),
+    top_k: parseInt(document.getElementById('topK').value),
+    max_new_tokens: parseInt(document.getElementById('maxTokens').value),
+    stop_at_eos: document.getElementById('stopAtEos').checked,
+  };
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = 'Generating…';
+
+  outputEl.innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
+  metaEl.textContent = '';
+
+  const start = performance.now();
+
+  try {
+    const res = await fetch(`${API_BASE}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || `server returned ${res.status}`);
+    }
+    const data = await res.json();
+    const elapsed = ((performance.now() - start) / 1000).toFixed(1);
+
+    outputEl.innerHTML = `
+      <span class="prompt-text">${escapeHtml(data.prompt)}</span><span class="generated-text">${escapeHtml(data.generated)}</span>
+    `;
+
+    metaEl.textContent = `${data.num_tokens} tokens · ${elapsed}s · T=${payload.temperature.toFixed(2)} · k=${payload.top_k || 'off'} · step ${_modelInfo.step ? _modelInfo.step.toLocaleString() : '?'}`;
+
+    // Add to history
+    state.history.unshift({
+      prompt: data.prompt,
+      generated: data.generated,
+      settings: `T=${payload.temperature.toFixed(2)} k=${payload.top_k || 'off'} · step ${_modelInfo.step ? _modelInfo.step.toLocaleString() : '?'}`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    if (state.history.length > 8) state.history = state.history.slice(0, 8);
+    renderHistory();
+  } catch (err) {
+    outputEl.innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+    console.error(err);
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Generate story';
+  }
+}
+
+generateBtn.addEventListener('click', generate);
+
+document.getElementById('prompt').addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    generate();
+  }
+});
+
+/* ===== History ===== */
+function renderHistory() {
+  const container = document.getElementById('history');
+  const list = document.getElementById('historyList');
+  if (state.history.length <= 1) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+  list.innerHTML = '';
+  state.history.slice(1).forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <div class="meta-line">${item.timestamp} · ${escapeHtml(item.settings)}</div>
+      <div class="excerpt"><em style="color:var(--rose)">${escapeHtml(item.prompt)}</em>${escapeHtml(item.generated.slice(0, 180))}…</div>
+    `;
+    div.addEventListener('click', () => {
+      outputEl.innerHTML = `
+        <span class="prompt-text">${escapeHtml(item.prompt)}</span><span class="generated-text">${escapeHtml(item.generated)}</span>
+      `;
+      metaEl.textContent = `[from history] ${item.settings}`;
+    });
+    list.appendChild(div);
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+/* ===== Initialize ===== */
+loadInfo();
+</script>
+</body>
+</html>

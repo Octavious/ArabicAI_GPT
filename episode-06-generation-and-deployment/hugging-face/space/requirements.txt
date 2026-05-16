@@ -1,0 +1,3 @@
+# Gradio is installed by the Space runtime from README.md sdk_version — do not pin it here.
+torch>=2.0.0
+tokenizers>=0.15.0

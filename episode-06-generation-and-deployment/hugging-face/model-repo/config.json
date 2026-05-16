@@ -1,0 +1,12 @@
+{
+  "model_type": "gpt",
+  "vocab_size": 4096,
+  "block_size": 256,
+  "n_embd": 384,
+  "n_layer": 6,
+  "n_head": 6,
+  "dropout": 0.1,
+  "architecture": "decoder-only transformer (GPT)",
+  "dataset": "TinyStories",
+  "parameters": "~12.4M"
+}

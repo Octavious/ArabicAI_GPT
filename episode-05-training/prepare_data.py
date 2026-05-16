@@ -70,8 +70,10 @@ def main():
     # It maps text → integer token IDs using the BPE merges it learned.
     print(f"\nLoading tokenizer from {TOKENIZER_PATH} ...")
     tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
+    eos_id = tokenizer.token_to_id("<|endoftext|>")
     vocab_size = tokenizer.get_vocab_size()
     print(f"  Tokenizer vocabulary size: {vocab_size:,}")
+    print(f"  <|endoftext|>: ID {eos_id}")
 
     # Safety check — our model and data loader assume uint16 storage.
     # uint16 can hold values 0..65,535. As long as the vocabulary is
@@ -118,8 +120,11 @@ def main():
             encoded = tokenizer.encode(text)
             ids = encoded.ids
 
-            # Append this story's tokens to the running list
+            # Append this story's tokens, then <|endoftext|> so the model learns
+            # to end a story and the inference loop can stop on token 0.
             all_ids.extend(ids)
+            if eos_id is not None:
+                all_ids.append(eos_id)
 
         # ── Convert the Python list to a numpy array of uint16 ────────────────
         # uint16 = 2 bytes per token. This matches what data_loader.py expects

@@ -24,6 +24,7 @@ import torch
 from tokenizers import Tokenizer
 
 from model import GPT, GPTConfig
+from inference_utils import truncate_at_story_restart
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -62,6 +63,11 @@ def main():
     parser.add_argument(
         "--top-k", type=int, default=40,
         help="Only sample from the top-K most likely tokens at each step."
+    )
+    parser.add_argument(
+        "--no-stop", action="store_true",
+        help="Keep generating past the end of one story. By default we stop "
+             "at the <|endoftext|> token so output is one complete story."
     )
     args = parser.parse_args()
 
@@ -118,8 +124,17 @@ def main():
     # The model.generate() method runs the autoregressive loop:
     # for each step, run the model forward, sample one token from the
     # output distribution, append it, repeat.
-    print(f"\nGenerating {args.tokens} tokens "
-          f"(temperature={args.temperature}, top_k={args.top_k}) ...\n")
+    #
+    # By default we tell it to stop at the <|endoftext|> token (ID 0) so the
+    # output is one complete story. With --no-stop, it keeps going until it
+    # hits max_new_tokens (and will start a new story after each EOS).
+    eos_id = tokenizer.token_to_id("<|endoftext|>")
+    if args.no_stop or eos_id is None:
+        eos_id = None        # disable early stopping
+
+    print(f"\nGenerating up to {args.tokens} tokens "
+          f"(temperature={args.temperature}, top_k={args.top_k}, "
+          f"stop_at_eos={eos_id is not None}) ...\n")
     print("=" * 60)
 
     with torch.no_grad():
@@ -128,14 +143,28 @@ def main():
             max_new_tokens=args.tokens,
             temperature=args.temperature,
             top_k=args.top_k,
+            eos_token_id=eos_id,
         )
 
     # ─────────────────────────────────────────────────────────────────────────
     # Step 5 — Decode the output back to text
     # ─────────────────────────────────────────────────────────────────────────
-    # output_ids has shape (1, prompt_len + tokens). Take the first row,
-    # convert to a Python list of ints, then decode.
-    output_text = tokenizer.decode(output_ids[0].tolist())
+    # output_ids has shape (1, prompt_len + N) where N <= args.tokens.
+    # Take the first row, convert to a Python list of ints.
+    full_ids = output_ids[0].tolist()
+
+    # Strip a trailing EOS token if present — it's a control marker, not
+    # something the user wants to see in the output.
+    if eos_id is not None and full_ids and full_ids[-1] == eos_id:
+        full_ids = full_ids[:-1]
+
+    prompt_text = tokenizer.decode(prompt_ids)
+    generated_only = tokenizer.decode(full_ids[len(prompt_ids):])
+
+    if eos_id is not None:
+        generated_only, _ = truncate_at_story_restart(generated_only)
+
+    output_text = prompt_text + generated_only
 
     print(output_text)
     print("=" * 60)

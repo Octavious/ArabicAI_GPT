@@ -25,4 +25,6 @@ Thumbs.db
 episode-05-training/train.bin
 episode-05-training/validation.bin
 episode-05-training/checkpoint.pt
+episode-06-generation-and-deployment/train.bin
+episode-06-generation-and-deployment/validation.bin
 episode-06-generation-and-deployment/checkpoint.pt
