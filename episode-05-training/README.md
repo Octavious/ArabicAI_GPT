@@ -3,7 +3,6 @@
 The fifth episode in the [Build a GPT From Scratch on a 6 GB GPU](../README.md) series.
 
 **▶ [Watch the video](https://www.youtube.com/playlist?list=PLvmpljk9TE2v4LbSrQxmnbOKkLa0Mw1oD)**
-**📊 [Open the slide deck](../../episode_05_slides.html)**
 
 ---
 
