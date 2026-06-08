@@ -1,3 +1,7 @@
+<a href="https://www.buymeacoffee.com/ArabicAI" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+**Related episode:** [Watch the YouTube playlist](https://www.youtube.com/playlist?list=PLvmpljk9TE2v4LbSrQxmnbOKkLa0Mw1oD)
+
 # Build a GPT From Scratch on a 6 GB GPU
 
 A YouTube series and accompanying code where we build a small transformer language model from absolute zero — empty folder to a model that writes children's stories — on consumer hardware.
